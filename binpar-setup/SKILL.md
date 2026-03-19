@@ -217,24 +217,25 @@ If already present and working, skip to Step 12.
 
 ### 11.2 Register the Notion MCP server
 
-Use the `claude mcp add` command to register Notion's hosted MCP server. Use `--scope user` so it's available across all projects:
+Use `mcp-remote` as a STDIO bridge to Notion's hosted MCP server. This avoids known PKCE/OAuth bugs in Claude Code's HTTP transport and handles OAuth independently:
 
 ```bash
-claude mcp add --transport http --scope user notion https://mcp.notion.com/mcp
+claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp
 ```
 
-This registers the official Notion MCP server (hosted by Notion, OAuth-based). No npm packages, no tokens, no manual config editing.
+This registers the official Notion MCP server (hosted by Notion) via a local STDIO bridge. The `mcp-remote` package manages OAuth state in `~/.mcp-auth/` — no manual tokens needed.
+
+> **Why not `--transport http`?** Claude Code's built-in HTTP OAuth has a known PKCE `code_verifier` bug that causes authentication failures. Using `mcp-remote` as a STDIO bridge works around this reliably.
 
 ### 11.3 Authenticate via OAuth
 
-Tell the user to run `/mcp` inside Claude Code to see the server status and trigger authentication.
+After registering, the user needs to trigger the OAuth flow. Tell them to restart Claude Code and then run `/mcp` or use any Notion tool — `mcp-remote` will open the browser automatically for OAuth.
 
-When they interact with a Notion tool for the first time (or via `/mcp`), the OAuth flow starts:
-1. Browser opens automatically with Notion's authorization page
-2. User signs in to Notion (if not already)
-3. User selects which workspace and pages to grant access to
-4. User clicks **"Allow access"**
-5. Authorization completes and the MCP server is ready
+When the browser opens:
+1. User signs in to Notion (if not already)
+2. User selects which workspace and pages to grant access to
+3. User clicks **"Allow access"**
+4. The terminal shows a success message and the MCP server is ready
 
 **CRITICAL — Read Garden only:** When the OAuth consent screen asks which pages to connect, the user MUST select **only the Read Garden space** (and its pages). Do **not** grant access to other workspaces — this scopes the integration's access correctly.
 
@@ -258,8 +259,8 @@ Summarize everything that was installed and configured:
 - APIs enabled
 
 **Notion** (if configured):
-- Notion MCP server registered (`https://mcp.notion.com/mcp`)
-- OAuth authentication completed (browser-based)
+- Notion MCP server registered via `mcp-remote` bridge (`https://mcp.notion.com/mcp`)
+- OAuth authentication completed (browser-based, managed by `mcp-remote`)
 - Connected to Read Garden space
 - Scope: user (available across all projects)
 
@@ -281,10 +282,11 @@ Read `references/setup-guide.md` for Google troubleshooting and `references/noti
 - **gcloud verification code mismatch:** Each `gcloud auth login` session generates a unique code challenge. The verification code is tied to that specific session. Never kill and restart the process — the old code won't work with a new session. Use the expect-based approach in Step 3.
 
 ### Notion
-- **OAuth flow doesn't start:** Run `/mcp` in Claude Code to check the server status and trigger authentication.
-- **Server not listed:** Re-run `claude mcp add --transport http --scope user notion https://mcp.notion.com/mcp`.
-- **Wrong workspace selected during OAuth:** Disconnect and reconnect — use `/mcp` to manage the server, or run `claude mcp remove notion` then re-add and re-authenticate. Select only Read Garden.
+- **OAuth flow doesn't start:** Restart Claude Code and run `/mcp` to check the server status. `mcp-remote` opens the browser automatically on first use.
+- **PKCE code_verifier error:** This happens with `--transport http`. Use the `mcp-remote` STDIO bridge instead: `claude mcp remove notion && claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp`.
+- **Server not listed:** Re-run `claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp`.
+- **Wrong workspace selected during OAuth:** Remove cached OAuth state (`rm -rf ~/.mcp-auth/`) and the server (`claude mcp remove notion`), then re-add and re-authenticate. Select only Read Garden.
 - **No access to pages:** During OAuth, the user must select the Read Garden space and its pages. If they selected a different space, re-authorize.
 - **"Docs" database not found:** The integration only sees pages/databases in the authorized space. Verify Read Garden was selected during OAuth.
 - **Rate limited:** Notion API allows 180 req/min (30 req/min for search). Wait and retry if you hit limits.
-- **Tool doesn't support remote MCP:** Use STDIO fallback with `mcp-remote` bridge: `claude mcp add notion -- npx -y mcp-remote https://mcp.notion.com/mcp`.
+- **mcp-remote auth expired:** Remove cached state with `rm -rf ~/.mcp-auth/` and restart Claude Code to trigger a fresh OAuth flow.
