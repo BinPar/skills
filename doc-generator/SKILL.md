@@ -2,39 +2,38 @@
 name: doc-generator
 description: >
   Use this skill when the user asks to generate a document, create a proposal,
-  draft a report, create a Google Doc, write a project specification, generate
-  a BinPar document, or describes content that should be produced as a formatted
-  Google Docs document. Also triggers when the user mentions creating deliverables,
-  writing client-facing documents, or needs a professionally formatted document.
-  Default language: Spanish. Auto-detect intent even when users don't explicitly
-  ask for document generation.
+  draft a report, create a Google Doc, create a Notion page, write a project
+  specification, generate a BinPar document, or describes content that should
+  be produced as a formatted document. Also triggers when the user mentions
+  creating deliverables, writing client-facing documents, internal documents,
+  or needs a professionally formatted document. Triggers on: "create a Notion
+  page", "generate in Notion", "draft in Notion", "genera un documento",
+  "crea una propuesta". Default language: Spanish. Auto-detect intent even
+  when users don't explicitly ask for document generation.
 ---
 
 # BinPar Document Generator
 
-Generates Google Docs by copying BinPar's corporate template and intelligently replacing content while preserving all styling and formatting.
+Generates professional documents in **Google Docs** (corporate template, client-facing) or **Notion** (Docs database, internal/simpler documents).
 
 **IMPORTANT:** All `gws` commands MUST be prefixed with `CI=true` to disable the TUI and get plain JSON output. Example: `CI=true gws drive files list ...`
 
 ## Prerequisites Check
 
-Before starting, verify GWS CLI is available:
+Before starting, check which output backends are available:
 
 ```bash
-which gws
+# Check Google Workspace CLI
+which gws && CI=true gws auth status
+
+# Check Notion MCP server
+claude mcp list 2>&1 | grep -i notion
 ```
 
-If `gws` is not found, tell the user:
-> "GWS CLI is not installed. Ask me to 'Set up BinPar tools' to install and configure it."
-
-Then stop — do not proceed without GWS CLI.
-
-Quick auth check:
-```bash
-CI=true gws auth status
-```
-
-If auth is expired, guide re-authentication (see binpar-setup skill).
+- If `gws` is not found and the user wants Google Docs output → tell them: "Ask me to 'Set up BinPar tools' to install and configure it." Then stop.
+- If Notion MCP is not registered and the user wants Notion output → tell them: "Ask me to 'Set up BinPar tools' and choose Notion setup." Then stop.
+- If neither is available → tell them to run setup first. Then stop.
+- If only one is available → skip the destination choice and use the available backend.
 
 ## Template Information
 
@@ -71,6 +70,23 @@ Parse the user's request to identify:
 - Plan → structured, actionable
 
 Ask for clarification only if critical information is genuinely ambiguous. Infer reasonable defaults for everything else.
+
+### Step A.1 — Ask Output Destination
+
+If both Google Docs and Notion are available, ask where to generate the document. Use AskUserQuestion:
+
+- **Google Docs** — Polished, corporate-template formatted document (recommended for client-facing)
+- **Notion** — Structured page in the Docs database (recommended for internal documents)
+
+If the user's request already specifies a destination (e.g., "create a Notion page", "genera un Google Doc"), skip the question and use what they asked for.
+
+**Routing:**
+- If **Google Docs** → continue with Step B (existing Google Docs flow)
+- If **Notion** → jump to **Step N.1** (Notion flow)
+
+---
+
+## Google Docs Flow (Steps B–G)
 
 ### Step B — Ask for Destination Folder
 
@@ -328,7 +344,90 @@ Present:
 - Brief summary: title, sections generated, key content
 - Remind user to review and adjust as needed
 
+---
+
+## Notion Flow (Steps N.1–N.5)
+
+Read `references/notion-generation.md` for detailed block patterns, database schema, and content mapping.
+
+### Step N.1 — Verify Notion MCP Available
+
+Confirm the Notion MCP tools are available in the current session. Try listing tools or making a simple search call.
+
+If the Notion MCP server is not running:
+> "Notion MCP is not available. Run `/mcp` to check the server status, or ask me to 'Set up BinPar tools' if you haven't configured it yet."
+
+Then stop.
+
+### Step N.2 — Locate Docs Database
+
+Search for the "Docs" database in the connected space:
+
+```
+Tool: mcp__notion__search
+Arguments: { "query": "Docs", "filter": { "property": "object", "value": "database" } }
+```
+
+If found → use the database ID.
+
+If multiple databases match → show options via AskUserQuestion and let the user pick.
+
+If not found → ask the user to provide the database ID or URL:
+> "I couldn't find a 'Docs' database in your connected Notion space. Please paste the database URL or ID, or tell me where to create the document."
+
+Extract database ID from URL format: `https://www.notion.so/workspace/DATABASE_ID?v=...`
+
+### Step N.3 — Generate Content
+
+Generate content adapted for Notion's block model. Use the same content quality as Google Docs but with simpler formatting:
+
+- **No cover page, no positioned logos** — Notion doesn't support this
+- **Page icon:** set appropriate emoji based on doc type (see reference)
+- **Headings:** H1/H2/H3 for structure
+- **Body:** paragraphs, bulleted lists, numbered lists
+- **Data:** tables for structured comparisons
+- **Highlights:** callout blocks for executive summaries and calls to action
+- **Separators:** divider blocks between major sections
+- **Professional Spanish by default** — same quality standards as Google Docs
+- **Concrete details from the user's description** — no generic padding
+
+Follow the page structure patterns in `references/notion-generation.md` for each document type.
+
+### Step N.4 — Create Page and Add Content
+
+#### 1. Create the page in the Docs database
+
+Use `mcp__notion__create_page` with:
+- **Parent:** the Docs database ID
+- **Icon:** emoji matching document type
+- **Properties:** Title, Client, Date, Author, Document Type
+
+#### 2. Append content blocks
+
+Use `mcp__notion__append_block_children` to add the generated content blocks to the page.
+
+The Notion API accepts up to 100 blocks per request. For large documents, split into multiple calls — one per major section is a good pattern.
+
+**Block order matters** — blocks are appended in sequence. Build the full document top to bottom:
+
+1. Executive summary / intro (callout + paragraphs)
+2. Main sections (heading_1 → heading_2 → paragraphs/lists)
+3. Data sections (tables)
+4. Closing (divider → call-to-action callout)
+
+### Step N.5 — Present Result
+
+The `create_page` response includes a `url` field. Present to the user:
+
+- The Notion page URL (always show the full URL as text in the chat message)
+- Brief summary: title, sections generated, database it was added to
+- Remind the user they can edit and refine the page directly in Notion
+
+---
+
 ## Error Handling
+
+### Google Docs Errors
 
 | Error | Solution |
 |-------|----------|
@@ -340,3 +439,14 @@ Present:
 | Large document timeout | Split batchUpdate into smaller batches |
 
 If a batchUpdate fails, always re-read the document structure (Step D) before retrying — indices will have changed.
+
+### Notion Errors
+
+| Error | Solution |
+|-------|----------|
+| Notion MCP not registered | Tell user: "Ask me to 'Set up BinPar tools' and choose Notion setup" |
+| Notion MCP not running | Run `/mcp` in Claude Code to check status and re-authenticate if needed |
+| Database not found | Ask user for the database ID or URL |
+| Permission denied / unauthorized | Re-authorize: `claude mcp remove notion` then re-add, select Read Garden during OAuth |
+| Rate limited (429) | Wait 1-2 seconds and retry the failed call |
+| Block limit exceeded | Split content into multiple `append_block_children` calls (max 100 blocks per call) |

@@ -2,15 +2,16 @@
 name: binpar-setup
 description: >
   Use this skill when the user needs to set up BinPar tools, install Google
-  Workspace CLI, configure Google authentication, or when any BinPar skill
-  reports that gws CLI is not available. Triggers on: "setup binpar",
-  "install google workspace", "configure gws", "gws not found", or when
-  the user is a new team member setting up their environment.
+  Workspace CLI, configure Google authentication, configure Notion MCP,
+  or when any BinPar skill reports that gws CLI or Notion is not available.
+  Triggers on: "setup binpar", "install google workspace", "configure gws",
+  "gws not found", "configure notion", "setup notion mcp", "notion integration",
+  or when the user is a new team member setting up their environment.
 ---
 
 # BinPar Setup
 
-Guides through installing and authenticating the Google Workspace CLI (GWS CLI), the foundation for all BinPar skills that interact with Google Workspace.
+Guides through installing and authenticating the Google Workspace CLI (GWS CLI) and optionally the Notion MCP server — the foundations for all BinPar skills that interact with Google Workspace and Notion.
 
 The setup should be fully interactive, easy, and require minimal user effort. Ask questions, provide defaults, and guide the user step by step.
 
@@ -181,7 +182,7 @@ Suggest adding GWS CLI to the Claude Code allow list so future commands don't re
 
 Tell the user they can add `Bash(gws *)` to their allow list in Claude Code settings to auto-approve all GWS CLI commands.
 
-## Step 9: Confirm Setup Complete
+## Step 9: Confirm Google Setup Complete
 
 Summarize what was installed and configured:
 - GWS CLI version
@@ -189,12 +190,88 @@ Summarize what was installed and configured:
 - GCP project
 - APIs enabled
 
-Let the user know they can now use BinPar skills that depend on Google Workspace, such as the document generator.
+Let the user know they can now use BinPar skills that depend on Google Workspace.
+
+## Step 10: Ask About Notion Setup
+
+After completing Google setup, ask the user if they also want to configure the Notion MCP server for internal document generation. Use AskUserQuestion with options:
+
+- **Yes, set up Notion** (Recommended) — enables creating documents directly in Notion
+- **Skip for now** — can be set up later
+
+If the user skips, jump to Step 14 (final summary).
+
+## Step 11: Add Notion MCP Server
+
+Read `references/notion-setup-guide.md` for detailed reference.
+
+### 11.1 Check if already configured
+
+Check if the Notion MCP server is already registered:
+
+```bash
+claude mcp list 2>&1 | grep -i notion
+```
+
+If already present and working, skip to Step 12.
+
+### 11.2 Register the Notion MCP server
+
+Use the `claude mcp add` command to register Notion's hosted MCP server. Use `--scope user` so it's available across all projects:
+
+```bash
+claude mcp add --transport http --scope user notion https://mcp.notion.com/mcp
+```
+
+This registers the official Notion MCP server (hosted by Notion, OAuth-based). No npm packages, no tokens, no manual config editing.
+
+### 11.3 Authenticate via OAuth
+
+Tell the user to run `/mcp` inside Claude Code to see the server status and trigger authentication.
+
+When they interact with a Notion tool for the first time (or via `/mcp`), the OAuth flow starts:
+1. Browser opens automatically with Notion's authorization page
+2. User signs in to Notion (if not already)
+3. User selects which workspace and pages to grant access to
+4. User clicks **"Allow access"**
+5. Authorization completes and the MCP server is ready
+
+**CRITICAL — Read Garden only:** When the OAuth consent screen asks which pages to connect, the user MUST select **only the Read Garden space** (and its pages). Do **not** grant access to other workspaces — this scopes the integration's access correctly.
+
+## Step 12: Verify Notion Connection
+
+After the user completes the OAuth flow, verify the connection works using the Notion MCP tools:
+
+- Search for pages to confirm access
+- Look for the "Docs" database
+
+If the tools aren't available yet, tell the user to run `/mcp` to check the server status and complete authentication if needed.
+
+## Step 13: Final Summary
+
+Summarize everything that was installed and configured:
+
+**Google Workspace:**
+- GWS CLI version
+- Authenticated Google account
+- GCP project
+- APIs enabled
+
+**Notion** (if configured):
+- Notion MCP server registered (`https://mcp.notion.com/mcp`)
+- OAuth authentication completed (browser-based)
+- Connected to Read Garden space
+- Scope: user (available across all projects)
+
+Let the user know they can now use all BinPar skills, including generating documents in both Google Docs and Notion.
+
+**Tip:** Mention the [Notion plugin for Claude Code](https://github.com/makenotion/claude-code-notion-plugin) — it bundles pre-built Skills and slash commands for common Notion workflows, providing a richer experience on top of the MCP server.
 
 ## Troubleshooting
 
-Read `references/setup-guide.md` for detailed troubleshooting. Common issues:
+Read `references/setup-guide.md` for Google troubleshooting and `references/notion-setup-guide.md` for Notion troubleshooting. Common issues:
 
+### Google Workspace
 - **Node.js < 18:** GWS CLI requires Node.js 18+. Upgrade with `brew install node` or from nodejs.org.
 - **gcloud not installed:** Install with `brew install google-cloud-sdk`.
 - **OAuth scope issues:** Re-run `gws auth login` and ensure Docs, Drive, and Sheets APIs are enabled.
@@ -202,3 +279,12 @@ Read `references/setup-guide.md` for detailed troubleshooting. Common issues:
 - **Wrong account:** Run `gws auth logout` then redo Step 6 to re-authenticate with the correct account.
 - **Browser doesn't open:** Use `CI=true NO_COLOR=1 TERM=dumb` env vars to disable the TUI and capture the URL from stderr.
 - **gcloud verification code mismatch:** Each `gcloud auth login` session generates a unique code challenge. The verification code is tied to that specific session. Never kill and restart the process — the old code won't work with a new session. Use the expect-based approach in Step 3.
+
+### Notion
+- **OAuth flow doesn't start:** Run `/mcp` in Claude Code to check the server status and trigger authentication.
+- **Server not listed:** Re-run `claude mcp add --transport http --scope user notion https://mcp.notion.com/mcp`.
+- **Wrong workspace selected during OAuth:** Disconnect and reconnect — use `/mcp` to manage the server, or run `claude mcp remove notion` then re-add and re-authenticate. Select only Read Garden.
+- **No access to pages:** During OAuth, the user must select the Read Garden space and its pages. If they selected a different space, re-authorize.
+- **"Docs" database not found:** The integration only sees pages/databases in the authorized space. Verify Read Garden was selected during OAuth.
+- **Rate limited:** Notion API allows 180 req/min (30 req/min for search). Wait and retry if you hit limits.
+- **Tool doesn't support remote MCP:** Use STDIO fallback with `mcp-remote` bridge: `claude mcp add notion -- npx -y mcp-remote https://mcp.notion.com/mcp`.
