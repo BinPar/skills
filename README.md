@@ -1,6 +1,6 @@
 # BinPar Skills
 
-Claude Code skills collection for BinPar team workflows. These skills auto-detect intent and integrate with Google Workspace via the GWS CLI and Notion via the official Notion MCP server.
+Shared BinPar skills for team workflows in both Claude Code and Codex. The skills auto-detect intent and integrate with Google Workspace via the GWS CLI and Notion via the official Notion MCP server.
 
 ## Available Skills
 
@@ -9,21 +9,24 @@ Claude Code skills collection for BinPar team workflows. These skills auto-detec
 | --------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
 | `binpar-setup`  | Installs and configures Google Workspace CLI + Notion MCP          | "Set up BinPar tools", "install gws", "configure notion"              |
 | `doc-generator` | Generates documents in Google Docs or Notion                       | "Crea una propuesta para...", "genera un documento", "create in Notion" |
+| `email-sender`  | Composes, drafts, replies to, and sends Gmail messages via `gws`   | "send email", "envia un correo", "reply to this thread"              |
 
 
 ## Quick Start
 
 ```bash
-npx skills add BinPar/skills
+npx skills add BinPar/skills --all
 ```
 
-That's it — all BinPar skills are installed. Then in Claude Code:
+This installs the skills for all supported agents on the machine. If you only want the current agent, run `npx skills add BinPar/skills`.
+
+Then in Claude Code or Codex:
 
 ```
 > "Set up BinPar tools"
 ```
 
-This triggers `binpar-setup`, which guides you through GWS CLI installation and Google authentication.
+This triggers `binpar-setup`, which guides you through GWS CLI installation, Google authentication, and optional Notion MCP setup.
 
 ### Manual Installation
 
@@ -33,6 +36,11 @@ If you prefer to install manually:
 git clone git@github.com:BinPar/skills.git ~/dev/binpar-skills
 ln -s ~/dev/binpar-skills/binpar-setup ~/.claude/skills/binpar-setup
 ln -s ~/dev/binpar-skills/doc-generator ~/.claude/skills/doc-generator
+ln -s ~/dev/binpar-skills/email-sender ~/.claude/skills/email-sender
+
+ln -s ~/dev/binpar-skills/binpar-setup ~/.codex/skills/binpar-setup
+ln -s ~/dev/binpar-skills/doc-generator ~/.codex/skills/doc-generator
+ln -s ~/dev/binpar-skills/email-sender ~/.codex/skills/email-sender
 ```
 
 ## Prerequisites
@@ -40,13 +48,13 @@ ln -s ~/dev/binpar-skills/doc-generator ~/.claude/skills/doc-generator
 - **Node.js 18+** — required by GWS CLI and Notion MCP server
 - **Google Workspace account** — BinPar corporate account
 - **Notion account** — with access to the Read Garden space (OAuth-based, no manual tokens)
-- **Claude Code** — with skills support
+- **Claude Code or Codex** — with skills support
 
 ## How It Works
 
 ### Google Workspace CLI
 
-All Google Workspace integration uses the [GWS CLI](https://github.com/nichochar/gws-cli) (`@googleworkspace/cli`), a terminal CLI built by Google for AI agents. Claude calls `gws` commands via Bash and gets structured JSON responses.
+All Google Workspace integration uses the [GWS CLI](https://github.com/nichochar/gws-cli) (`@googleworkspace/cli`), a terminal CLI built by Google for AI agents. The current agent calls `gws` commands via Bash and gets structured JSON responses.
 
 Key benefits:
 
@@ -57,7 +65,7 @@ Key benefits:
 
 ### Notion MCP Server
 
-Internal document generation uses Notion's official hosted MCP server at `https://mcp.notion.com/mcp`. Claude interacts with Notion pages and databases via MCP tool calls.
+Internal document generation uses Notion's official hosted MCP server at `https://mcp.notion.com/mcp`. Claude Code and Codex both interact with Notion pages and databases via MCP tool calls.
 
 Key benefits:
 
@@ -80,8 +88,8 @@ The `doc-generator` skill supports two output backends:
 
 **Notion** (internal, simpler):
 1. Locates the "Docs" database in the Read Garden space
-2. Creates a new page with metadata properties (Client, Date, Author, Type)
-3. Appends structured content blocks (headings, paragraphs, tables, callouts)
+2. Fetches the target database or data source details required by the current runtime
+3. Creates a new page with metadata properties (Client, Date, Author, Type) and structured content
 4. Result: well-organized Notion page in the team's Docs database
 
 ## Adding New Skills
@@ -108,31 +116,32 @@ description: >
 To install a new skill:
 
 ```bash
-ln -s ~/dev/binpar-skills/skill-name ~/.claude/skills/skill-name
+npx skills add /absolute/path/to/repo --skill skill-name --all
 ```
+
+If you need a manual symlink instead, link the skill into the matching agent directory under `~/.claude/skills/` or `~/.codex/skills/`.
 
 ## Troubleshooting
 
 
 | Issue                        | Solution                                                                       |
 | ---------------------------- | ------------------------------------------------------------------------------ |
-| `gws: command not found`     | Run `npm install -g @googleworkspace/cli` or ask Claude: "Set up BinPar tools" |
+| `gws: command not found`     | Run `npm install -g @googleworkspace/cli` or ask the current agent: "Set up BinPar tools" |
 | Auth expired                 | Run `gws auth login`                                                           |
 | Node.js too old              | Upgrade to Node.js 18+                                                         |
-| Permission denied on symlink | Check `~/.claude/skills/` exists and is writable                               |
+| Permission denied on symlink | Check the target agent directory (`~/.claude/skills/` or `~/.codex/skills/`) exists and is writable |
 | Template not accessible      | Verify Google Drive sharing permissions on the template document               |
-| Notion MCP not starting      | Run `/mcp` in Claude Code, or re-add: `claude mcp add --transport http --scope user notion https://mcp.notion.com/mcp` |
+| Notion MCP not starting      | Re-check server registration with `claude mcp list` or `codex mcp list`, then re-add the server for the current runtime |
 | Notion: no access to pages   | Re-authorize OAuth and select Read Garden during consent                       |
-| Notion: auth expired         | Run `/mcp` to re-authenticate, or `claude mcp remove notion` then re-add       |
+| Notion: auth expired         | Remove the current runtime's `notion` server, clear `~/.mcp-auth/` if needed, then re-add and re-authenticate |
 
 
 ## Team Onboarding Checklist
 
 1. Clone this repo
-2. Symlink skills into `~/.claude/skills/`
-3. Ask Claude: "Set up BinPar tools" (installs GWS CLI + authenticates + configures Notion)
+2. Install the skills with `npx skills add BinPar/skills --all`
+3. Ask Claude Code or Codex: "Set up BinPar tools" (installs GWS CLI + authenticates + configures Notion)
 4. Verify Google: `gws drive files list --params '{"pageSize": 1}'`
-5. Verify Notion: restart Claude Code and ask "verify Notion connection"
+5. Verify Notion: re-open the current agent session and ask "verify Notion connection"
 6. Test Google Docs: "Crea un documento de prueba"
 7. Test Notion: "Crea un documento interno en Notion"
-

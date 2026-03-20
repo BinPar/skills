@@ -1,6 +1,13 @@
 # Notion Document Generation Reference
 
-Reference for generating structured documents in Notion using the Notion MCP server tools.
+Reference for generating structured documents in Notion using the official Notion MCP server from either Claude Code or Codex.
+
+## Runtime Compatibility
+
+- Claude Code and Codex are both supported targets.
+- Use the current runtime's official Notion MCP tools instead of assuming older REST-style tool names are present.
+- Codex currently maps this workflow to `mcp__notion__notion_search`, `mcp__notion__notion_fetch`, `mcp__notion__notion_create_pages`, and `mcp__notion__notion_update_page`.
+- In runtimes that expose a separate data source or collection concept, fetch the database first and create the page under the resolved data source target.
 
 ## Docs Database Schema
 
@@ -14,31 +21,15 @@ The "Docs" database in the Read Garden space has these properties:
 | **Author** | rich_text | Author's full name |
 | **Document Type** | select | One of: `Proposal`, `Report`, `Specification`, `Plan` |
 
-When creating a page, set properties like this:
+When creating a page, populate these logical fields using the current runtime's property format:
 
-```json
-{
-  "parent": { "database_id": "DATABASE_ID" },
-  "icon": { "emoji": "🤝" },
-  "properties": {
-    "Title": {
-      "title": [{ "text": { "content": "Document Title" } }]
-    },
-    "Client": {
-      "select": { "name": "ClientName" }
-    },
-    "Date": {
-      "date": { "start": "2026-03-19" }
-    },
-    "Author": {
-      "rich_text": [{ "text": { "content": "Author Name" } }]
-    },
-    "Document Type": {
-      "select": { "name": "Proposal" }
-    }
-  }
-}
-```
+- Parent target: Docs database or resolved data source
+- Icon: document-type emoji
+- `Title`: document title
+- `Client`: client name
+- `Date`: ISO 8601 date
+- `Author`: author full name
+- `Document Type`: Proposal, Report, Specification, or Plan
 
 ## Page Icons by Document Type
 
@@ -49,9 +40,9 @@ When creating a page, set properties like this:
 | Specification | 🔧 | Wrench — technical, building |
 | Plan | 📅 | Calendar — planning, timeline |
 
-## Available Block Types
+## Content Building Blocks
 
-The Notion API supports these block types for content:
+Build the document using these Notion concepts, regardless of whether the runtime expresses them as Markdown or block payloads:
 
 ### Text Blocks
 
@@ -76,84 +67,31 @@ The Notion API supports these block types for content:
 | Table | Data comparisons | `table` |
 | Table row | Row within table | `table_row` |
 
-### Block JSON Format
+### Recommended authoring shape
 
-Each block follows this structure:
+In Codex, prefer Notion-flavored Markdown content in a single page creation call when practical. In Claude Code, use the equivalent current create/update content flow exposed by the runtime.
 
-```json
-{
-  "type": "heading_1",
-  "heading_1": {
-    "rich_text": [{ "text": { "content": "Section Title" } }]
-  }
-}
-```
+Equivalent logical structure:
 
-**Paragraph with formatting:**
-```json
-{
-  "type": "paragraph",
-  "paragraph": {
-    "rich_text": [
-      { "text": { "content": "Normal text " } },
-      { "text": { "content": "bold text" }, "annotations": { "bold": true } },
-      { "text": { "content": " and " } },
-      { "text": { "content": "italic text" }, "annotations": { "italic": true } }
-    ]
-  }
-}
-```
+```md
+# Resumen Ejecutivo
 
-**Callout:**
-```json
-{
-  "type": "callout",
-  "callout": {
-    "icon": { "emoji": "💡" },
-    "rich_text": [{ "text": { "content": "Important note or call to action" } }]
-  }
-}
-```
+> Idea clave o callout inicial.
 
-**Divider:**
-```json
-{
-  "type": "divider",
-  "divider": {}
-}
-```
+## Contexto
 
-**Table (3 columns, 2 rows):**
-```json
-{
-  "type": "table",
-  "table": {
-    "table_width": 3,
-    "has_column_header": true,
-    "children": [
-      {
-        "type": "table_row",
-        "table_row": {
-          "cells": [
-            [{ "text": { "content": "Header 1" } }],
-            [{ "text": { "content": "Header 2" } }],
-            [{ "text": { "content": "Header 3" } }]
-          ]
-        }
-      },
-      {
-        "type": "table_row",
-        "table_row": {
-          "cells": [
-            [{ "text": { "content": "Cell 1" } }],
-            [{ "text": { "content": "Cell 2" } }],
-            [{ "text": { "content": "Cell 3" } }]
-          ]
-        }
-      }
-    ]
-  }
-}
+Parrafo descriptivo.
+
+## Alcance
+
+- Punto 1
+- Punto 2
+
+## Tabla de datos
+
+| Columna 1 | Columna 2 | Columna 3 |
+| --- | --- | --- |
+| A | B | C |
 ```
 
 ## Content Mapping: Google Docs → Notion
@@ -218,29 +156,43 @@ Available colors: `default`, `gray`, `brown`, `orange`, `yellow`, `green`, `blue
 
 ### Find the Docs database
 
-Use `mcp__notion__search` to find the database:
+Search for the Docs database, then fetch the winning result to confirm the correct creation target.
 
 ```
-Tool: mcp__notion__search
-Arguments: { "query": "Docs", "filter": { "property": "object", "value": "database" } }
+Codex example search:
+Tool: mcp__notion__notion_search
+Arguments: { "query": "Docs", "query_type": "internal", "page_size": 10 }
+
+Codex follow-up:
+Tool: mcp__notion__notion_fetch
+Arguments: { "id": "<database or page id/url>" }
 ```
 
 ### Create a page in the database
 
-Use `mcp__notion__create_page` with the database as parent and properties matching the schema.
+Use the current runtime's page creation tool with the fetched database or data source target and properties matching the schema.
 
-### Append content blocks
+Codex example:
 
-Use `mcp__notion__append_block_children` to add blocks to the page. The Notion API accepts up to 100 blocks per request.
+```
+Tool: mcp__notion__notion_create_pages
+Parent: { "data_source_id": "<fetched data source id>" }
+Properties: Title, Client, Date, Author, Document Type
+Content: Notion-flavored Markdown
+```
 
-For large documents, split into multiple append calls:
+### Update or append content if needed
+
+Prefer a single create call with full content when supported. If the runtime requires a second step, update the page content in top-to-bottom sections using its current page update tool.
+
+For large documents, split into multiple updates:
 1. First call: heading_1 + intro paragraphs for section 1
 2. Second call: section 2 content
 3. Continue as needed
 
 ### Get the page URL
 
-After creating the page, the response includes a `url` field with the Notion page URL.
+After creating the page, present the returned page URL. If the runtime does not return it directly, fetch the page and surface the canonical URL.
 
 ## Page Structure Patterns
 

@@ -2,7 +2,7 @@
 
 ## Resumen
 
-Skill para componer y enviar emails desde Claude Code vía Gmail API (gws CLI). Sigue el patrón de `doc-generator`: un `SKILL.md` con instrucciones en Markdown que Claude interpreta, más archivos de referencia.
+Skill para componer y enviar emails desde Claude Code o Codex vía Gmail API (gws CLI). Sigue el patrón de `doc-generator`: un `SKILL.md` con instrucciones en Markdown y archivos de referencia compartidos.
 
 ## Decisiones de diseño
 
@@ -10,7 +10,7 @@ Skill para componer y enviar emails desde Claude Code vía Gmail API (gws CLI). 
 |---|---|
 | Resolución de contactos | Directory API → Gmail history → preguntar al usuario |
 | Formato HTML | Adaptativo: mínimo (informal/corto) vs. rico (formal/largo) |
-| Verificación pre-envío | Preview en chat + AskUserQuestion (borrador Gmail / enviar) |
+| Verificación pre-envío | Preview en chat + AskQuestionTool o equivalente del runtime (borrador Gmail / enviar) |
 | Hilos | Emails nuevos + reply/reply-all/forward |
 | Identidad | Siempre la real del sendAs. No se permite override de nombre |
 | Firma | Se usa la del usuario. Si tiene varias sendAs, preguntar cuál |
@@ -44,13 +44,13 @@ Parsear la petición del usuario para extraer:
 
 | Campo | Inferencia | Si no se infiere |
 |---|---|---|
-| **Tipo de acción** | Nuevo / Reply / Reply-all / Forward | AskUserQuestion |
-| **Destinatario(s)** | Nombres o emails mencionados | AskUserQuestion |
-| **Asunto** | Tema de la conversación | AskUserQuestion |
-| **Tono** | Formal / semiformal / informal / urgente | Inferir del contexto, si ambiguo → AskUserQuestion |
-| **Idioma** | Idioma del usuario en la conversación | Inferir, si ambiguo → AskUserQuestion |
-| **Adjuntos** | Archivos referenciados | Si paths ambiguos → AskUserQuestion |
-| **Contenido clave** | Puntos a comunicar | Si insuficiente → AskUserQuestion |
+| **Tipo de acción** | Nuevo / Reply / Reply-all / Forward | AskQuestionTool o equivalente |
+| **Destinatario(s)** | Nombres o emails mencionados | AskQuestionTool o equivalente |
+| **Asunto** | Tema de la conversación | AskQuestionTool o equivalente |
+| **Tono** | Formal / semiformal / informal / urgente | Inferir del contexto, si ambiguo → AskQuestionTool o equivalente |
+| **Idioma** | Idioma del usuario en la conversación | Inferir, si ambiguo → AskQuestionTool o equivalente |
+| **Adjuntos** | Archivos referenciados | Si paths ambiguos → AskQuestionTool o equivalente |
+| **Contenido clave** | Puntos a comunicar | Si insuficiente → AskQuestionTool o equivalente |
 
 **Regla**: la skill NUNCA asume datos críticos (destinatario, asunto). Si hay ambigüedad, pregunta.
 
@@ -67,8 +67,8 @@ Si es solo un nombre:
   1. Directory API (si scopes disponibles):
      CI=true gws people people searchDirectoryPeople \
        --params '{"query":"<nombre>","readMask":"names,emailAddresses","sources":"DIRECTORY_SOURCE_TYPE_DOMAIN_PROFILE"}'
-     → Si 1 resultado → AskUserQuestion para confirmar: "¿<nombre> (<email>)?"
-     → Si N resultados → AskUserQuestion con opciones
+     → Si 1 resultado → AskQuestionTool o equivalente para confirmar: "¿<nombre> (<email>)?"
+     → Si N resultados → AskQuestionTool o equivalente con opciones
      → Si 0 resultados → paso 2
 
   2. Gmail history search:
@@ -78,11 +78,11 @@ Si es solo un nombre:
        CI=true gws gmail users messages get \
          --params '{"userId":"me","id":"<msgId>","format":"metadata","metadataHeaders":"To,Cc"}'
      → Deduplicar emails encontrados
-     → AskUserQuestion con las opciones encontradas
+     → AskQuestionTool o equivalente con las opciones encontradas
      → Si 0 resultados → paso 3
 
   3. Pedir email directamente:
-     AskUserQuestion: "No encontré el email de <nombre>. ¿Cuál es?"
+     AskQuestionTool o equivalente si es posible; si no, preguntar: "No encontré el email de <nombre>. ¿Cuál es?"
 ```
 
 ### Paso 3: Identidad y firma
@@ -93,7 +93,7 @@ CI=true gws gmail users settings sendAs list --params '{"userId":"me"}'
 ```
 
 - Si **1 sendAs** → usar automáticamente (email + displayName + signature HTML)
-- Si **N sendAs** → AskUserQuestion: "¿Desde qué dirección quieres enviar?"
+- Si **N sendAs** → AskQuestionTool o equivalente: "¿Desde qué dirección quieres enviar?"
   - Mostrar cada alias con su displayName
 - Extraer `signature` (HTML) del alias seleccionado
 - Extraer `displayName` para el header `From`
@@ -139,7 +139,7 @@ Si el usuario referencia archivos:
    - SVG → PNG: usar `qlmanage -t -s 2000` (macOS built-in)
    - Otros formatos: evaluar caso a caso
 3. Validar tamaño (Gmail límite: 25MB total, recomendar <10MB)
-4. Si el tamaño excede → AskUserQuestion: "El adjunto pesa X MB. ¿Enviarlo igualmente, comprimirlo, o subirlo a Drive y compartir link?"
+4. Si el tamaño excede → AskQuestionTool o equivalente: "El adjunto pesa X MB. ¿Enviarlo igualmente, comprimirlo, o subirlo a Drive y compartir link?"
 
 ### Paso 6: Construcción MIME
 
@@ -208,7 +208,7 @@ Alberto Blanco
 
 #### 7.2 Preguntar acción
 
-AskUserQuestion con opciones:
+Preguntar con opciones usando AskQuestionTool o el equivalente estructurado del runtime si está disponible, o chat directo si no:
 1. **Enviar ahora** — envía directamente vía `messages.send`
 2. **Crear borrador en Gmail** — crea draft, muestra URL para revisión final en Gmail
 3. **Editar** — el usuario indica qué cambiar, se regenera y se vuelve a preguntar
@@ -366,10 +366,10 @@ Documentar la cadena de resolución:
    - Buscar con `messages.list` + `q=to:<nombre>` o `q=from:<nombre>`
    - Obtener headers `To`, `Cc`, `From` con `messages.get` format `metadata`
    - Deduplicar y rankear por frecuencia
-   - Siempre confirmar con AskUserQuestion
+   - Siempre confirmar con el usuario
 
 3. **Pedir al usuario**:
-   - AskUserQuestion directa solicitando el email
+   - Pregunta directa solicitando el email
 
 ---
 
@@ -381,7 +381,7 @@ Documentar la cadena de resolución:
 | 401 Unauthorized | Token expirado | `CI=true gws gmail auth login`, mostrar URL en chat |
 | 403 Insufficient scopes | Falta scope | Informar + ofrecer re-auth vía `binpar-setup` |
 | `--upload` fuera del directorio | Archivo .eml en /tmp | Copiar al directorio de trabajo antes de upload |
-| Adjunto >25MB | Límite de Gmail | AskUserQuestion: comprimir, Drive link, o cancelar |
+| Adjunto >25MB | Límite de Gmail | Preguntar: comprimir, Drive link, o cancelar |
 | `argument list too long` | JSON del raw demasiado grande | Usar `--upload` con archivo .eml en vez de `--json` inline |
 | Display name vacío en From | No se seteó `formataddr()` | Siempre usar `formataddr((name, email))` |
 | Subject mal codificado | Caracteres UTF-8 | Python `email` lib maneja encoding automáticamente |
@@ -401,7 +401,7 @@ description: >
   "escribe un email", "compose", "email to", "correo a", "mail a".
   Default language: matches user's conversation language.
   IMPORTANT: Always verify the complete email with the user before sending.
-  IMPORTANT: Always use AskUserQuestion for any decision or confirmation.
+  IMPORTANT: For any decision or confirmation, use AskQuestionTool or the runtime's equivalent structured question/input flow when available, preferring option-based prompts whenever possible.
 ---
 ```
 

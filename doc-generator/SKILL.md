@@ -14,20 +14,34 @@ description: >
 
 # BinPar Document Generator
 
+## Runtime Compatibility
+
+This skill supports Claude Code and Codex as equal targets.
+
+- For user choices, use AskQuestionTool or the current runtime's equivalent structured question/input mechanism when available.
+- Prefer option-based prompts over free-text questions whenever possible.
+- If no structured question tool is available, ask directly in chat.
+- For Notion MCP management, use `claude mcp ...` in Claude Code and `codex mcp ...` in Codex.
+- For Notion content operations, use the current runtime's official Notion MCP tools. In Codex, the expected mapping is `mcp__notion__notion_search` -> `mcp__notion__notion_fetch` -> `mcp__notion__notion_create_pages` or `mcp__notion__notion_update_page`.
+- Do not assume older REST-style Notion tool names are present unless you have verified them in the current runtime.
+
 Generates professional documents in **Google Docs** (corporate template, client-facing) or **Notion** (Docs database, internal/simpler documents).
 
 **IMPORTANT:** All `gws` commands MUST be prefixed with `CI=true` to disable the TUI and get plain JSON output. Example: `CI=true gws drive files list ...`
 
 ## Prerequisites Check
 
-Before starting, check which output backends are available:
+Before starting, check which output backends are available. For Notion MCP, run only the command that matches the current runtime:
 
 ```bash
 # Check Google Workspace CLI
 which gws && CI=true gws auth status
 
-# Check Notion MCP server
+# Check Notion MCP server in Claude Code
 claude mcp list 2>&1 | grep -i notion
+
+# Check Notion MCP server in Codex
+codex mcp list 2>&1 | grep -i notion
 ```
 
 - If `gws` is not found and the user wants Google Docs output → tell them: "Ask me to 'Set up BinPar tools' to install and configure it." Then stop.
@@ -73,7 +87,7 @@ Ask for clarification only if critical information is genuinely ambiguous. Infer
 
 ### Step A.1 — Ask Output Destination
 
-If both Google Docs and Notion are available, ask where to generate the document. Use AskUserQuestion:
+If both Google Docs and Notion are available, ask where to generate the document. Use AskQuestionTool or the current runtime's equivalent structured question flow when available; otherwise ask directly in chat:
 
 - **Google Docs** — Polished, corporate-template formatted document (recommended for client-facing)
 - **Notion** — Structured page in the Docs database (recommended for internal documents)
@@ -346,7 +360,7 @@ Present:
 
 ---
 
-## Notion Flow (Steps N.1–N.5)
+## Notion Flow (Steps N.1-N.5)
 
 Read `references/notion-generation.md` for detailed block patterns, database schema, and content mapping.
 
@@ -355,22 +369,25 @@ Read `references/notion-generation.md` for detailed block patterns, database sch
 Confirm the Notion MCP tools are available in the current session. Try listing tools or making a simple search call.
 
 If the Notion MCP server is not running:
-> "Notion MCP is not available. Run `/mcp` to check the server status, or ask me to 'Set up BinPar tools' if you haven't configured it yet."
+> "Notion MCP is not available. Check the current runtime's MCP server list, or ask me to 'Set up BinPar tools' if you haven't configured it yet."
 
 Then stop.
 
 ### Step N.2 — Locate Docs Database
 
-Search for the "Docs" database in the connected space:
+Search for the "Docs" database in the connected space, then fetch the winning result to confirm its schema and creation target.
 
 ```
-Tool: mcp__notion__search
-Arguments: { "query": "Docs", "filter": { "property": "object", "value": "database" } }
+Codex example:
+Tool: mcp__notion__notion_search
+Arguments: { "query": "Docs", "query_type": "internal", "page_size": 10 }
 ```
 
-If found → use the database ID.
+If found:
+- Fetch the candidate result to confirm it is the correct Docs database.
+- When the runtime exposes a separate data source or collection concept, use that fetched `data_source_id` or `collection://...` target for page creation.
 
-If multiple databases match → show options via AskUserQuestion and let the user pick.
+If multiple databases match → show options to the user and let them pick via AskQuestionTool or the current runtime's equivalent structured question flow. Fall back to direct chat only if needed.
 
 If not found → ask the user to provide the database ID or URL:
 > "I couldn't find a 'Docs' database in your connected Notion space. Please paste the database URL or ID, or tell me where to create the document."
@@ -379,36 +396,39 @@ Extract database ID from URL format: `https://www.notion.so/workspace/DATABASE_I
 
 ### Step N.3 — Generate Content
 
-Generate content adapted for Notion's block model. Use the same content quality as Google Docs but with simpler formatting:
+Generate content adapted for Notion's page/content model. Use the same content quality as Google Docs but with simpler formatting:
 
 - **No cover page, no positioned logos** — Notion doesn't support this
 - **Page icon:** set appropriate emoji based on doc type (see reference)
 - **Headings:** H1/H2/H3 for structure
 - **Body:** paragraphs, bulleted lists, numbered lists
 - **Data:** tables for structured comparisons
-- **Highlights:** callout blocks for executive summaries and calls to action
-- **Separators:** divider blocks between major sections
+- **Highlights:** callouts or equivalent highlighted sections for executive summaries and calls to action
+- **Separators:** divider blocks or equivalent section separators
 - **Professional Spanish by default** — same quality standards as Google Docs
 - **Concrete details from the user's description** — no generic padding
+
+Prefer a single structured content payload when the runtime supports it. In Codex, prefer Notion-flavored Markdown content passed during page creation. In other runtimes, use the equivalent current content model.
 
 Follow the page structure patterns in `references/notion-generation.md` for each document type.
 
 ### Step N.4 — Create Page and Add Content
 
-#### 1. Create the page in the Docs database
+#### 1. Create the page in the Docs database or data source
 
-Use `mcp__notion__create_page` with:
-- **Parent:** the Docs database ID
+Use the current runtime's page creation tool with:
+- **Parent:** the Docs database or fetched data source target
 - **Icon:** emoji matching document type
 - **Properties:** Title, Client, Date, Author, Document Type
+- **Content:** the generated Notion content payload when supported at create time
 
-#### 2. Append content blocks
+In Codex, prefer a single `mcp__notion__notion_create_pages` call with the fetched `data_source_id`, the exact property names from the fetched schema, and the full content body.
 
-Use `mcp__notion__append_block_children` to add the generated content blocks to the page.
+#### 2. Add or refine content if needed
 
-The Notion API accepts up to 100 blocks per request. For large documents, split into multiple calls — one per major section is a good pattern.
+If the runtime cannot create the full page content in one call, create the page first and then add or update content using the current runtime's update tool in as few calls as possible.
 
-**Block order matters** — blocks are appended in sequence. Build the full document top to bottom:
+Build the full document top to bottom:
 
 1. Executive summary / intro (callout + paragraphs)
 2. Main sections (heading_1 → heading_2 → paragraphs/lists)
@@ -417,7 +437,7 @@ The Notion API accepts up to 100 blocks per request. For large documents, split 
 
 ### Step N.5 — Present Result
 
-The `create_page` response includes a `url` field. Present to the user:
+Present to the user:
 
 - The Notion page URL (always show the full URL as text in the chat message)
 - Brief summary: title, sections generated, database it was added to
@@ -445,8 +465,8 @@ If a batchUpdate fails, always re-read the document structure (Step D) before re
 | Error | Solution |
 |-------|----------|
 | Notion MCP not registered | Tell user: "Ask me to 'Set up BinPar tools' and choose Notion setup" |
-| Notion MCP not running | Run `/mcp` in Claude Code to check status and re-authenticate if needed |
+| Notion MCP not running | Check the current runtime's MCP server status and re-authenticate if needed |
 | Database not found | Ask user for the database ID or URL |
-| Permission denied / unauthorized | Re-authorize: `claude mcp remove notion` then re-add, select Read Garden during OAuth |
+| Permission denied / unauthorized | Re-authorize the current runtime's `notion` MCP server, then select Read Garden during OAuth |
 | Rate limited (429) | Wait 1-2 seconds and retry the failed call |
-| Block limit exceeded | Split content into multiple `append_block_children` calls (max 100 blocks per call) |
+| Create-time content not supported | Switch to a create-then-update flow using the current runtime's Notion update tool |

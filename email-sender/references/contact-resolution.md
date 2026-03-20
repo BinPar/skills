@@ -32,8 +32,8 @@ CI=true gws people people searchDirectoryPeople \
 
 | Result | Action |
 |---|---|
-| 1 match | AskUserQuestion to confirm: "Is it [Name] ([email])?" |
-| N matches | AskUserQuestion with numbered options |
+| 1 match | Confirm with AskQuestionTool or equivalent: "Is it [Name] ([email])?" |
+| N matches | Use AskQuestionTool or equivalent with numbered options |
 | 0 matches | Fall through to Step 3 |
 | 403 error | Directory scope not available — inform user, fall through to Step 3 |
 
@@ -69,7 +69,7 @@ CI=true gws gmail users messages get \
 1. Extract email addresses from matching headers
 2. Deduplicate
 3. Rank by frequency (most common match first)
-4. AskUserQuestion with the options found
+4. Use AskQuestionTool or equivalent so the user can choose from the options found
 5. If 0 results → fall through to Step 4
 
 ---
@@ -79,7 +79,7 @@ CI=true gws gmail users messages get \
 If all automated methods fail:
 
 ```
-AskUserQuestion: "No encontré el email de <name>. ¿Cuál es su dirección de correo?"
+Use AskQuestionTool or equivalent if possible; otherwise ask directly: "No encontre el email de <name>. Cual es su direccion de correo?"
 ```
 
 ---

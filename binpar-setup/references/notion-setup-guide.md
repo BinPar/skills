@@ -1,10 +1,10 @@
-# Notion MCP Server — Setup Guide
+# Notion MCP Server - Setup Guide
 
-Comprehensive reference for configuring the Notion MCP server with Claude Code.
+Comprehensive reference for configuring the Notion MCP server for both Claude Code and Codex.
 
 ## Overview
 
-Notion provides an official hosted MCP server at `https://mcp.notion.com/mcp`. It allows Claude Code to read, create, and update Notion pages and databases directly via tool calls.
+Notion provides an official hosted MCP server at `https://mcp.notion.com/mcp`. It allows both Claude Code and Codex to read, create, and update Notion pages and databases directly via tool calls.
 
 - **Server URL:** `https://mcp.notion.com/mcp`
 - **Transport:** HTTP (Streamable HTTP, hosted by Notion)
@@ -13,26 +13,32 @@ Notion provides an official hosted MCP server at `https://mcp.notion.com/mcp`. I
 
 > **Note:** The npm package `@notionhq/notion-mcp-server` (open-source server) is no longer actively maintained. Always use the hosted server at `mcp.notion.com`.
 
-## Setup for Claude Code
+## Shared Setup Strategy
 
 ### Step 1: Register the MCP Server
 
-Use `mcp-remote` as a STDIO bridge to Notion's hosted server. This avoids known PKCE/OAuth bugs in Claude Code's built-in HTTP transport:
+Use `mcp-remote` as a STDIO bridge to Notion's hosted server. The team uses this path in both runtimes so setup and troubleshooting stay consistent. Run only the command that matches the current runtime.
 
 ```bash
+# Claude Code
 claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp
+
+# Codex
+codex mcp add notion -- npx -y mcp-remote https://mcp.notion.com/mcp
 ```
 
-> **Why not `--transport http`?** Claude Code's HTTP transport has a known PKCE `code_verifier` bug that causes "invalid PKCE code_verifier" errors during OAuth. The `mcp-remote` bridge handles OAuth independently and works reliably.
+> **Why standardize on `mcp-remote`?** Claude Code has known HTTP OAuth edge cases, and the shared `mcp-remote` bridge gives both runtimes the same OAuth and troubleshooting path.
 
 Scope options:
 - `--scope user` (recommended): Available across all projects for this user
 - `--scope local` (default): Available only in the current project
 - `--scope project`: Shared with team via `.mcp.json` file
 
+Codex does not currently use the same `--scope` flag shape, so the Codex command above omits it.
+
 ### Step 2: Authenticate via OAuth
 
-Restart Claude Code after registering. On first use of a Notion tool (or via `/mcp`), `mcp-remote` opens the browser automatically for OAuth:
+Restart the current runtime after registering. On first use of a Notion tool, `mcp-remote` opens the browser automatically for OAuth:
 
 1. Browser opens with Notion's authorization page
 2. Sign in to Notion
@@ -43,7 +49,7 @@ Restart Claude Code after registering. On first use of a Notion tool (or via `/m
 
 ### Step 3: Verify Connection
 
-Use the Notion MCP tools to verify:
+Use the Notion MCP tools in the current runtime to verify:
 - Search for pages to confirm access
 - Confirm the "Docs" database is accessible
 
@@ -52,17 +58,23 @@ Use the Notion MCP tools to verify:
 ### List registered servers
 
 ```bash
+# Claude Code
 claude mcp list
+
+# Codex
+codex mcp list
 ```
 
-### Check status in Claude Code
-
-Run `/mcp` inside Claude Code to see all MCP servers and their connection status.
+In Claude Code, `/mcp` is a convenient UI entrypoint. In Codex, use `codex mcp list` plus a live Notion tool call in-session.
 
 ### Remove the server
 
 ```bash
+# Claude Code
 claude mcp remove notion
+
+# Codex
+codex mcp remove notion
 ```
 
 ### Re-authenticate
@@ -71,11 +83,17 @@ Remove cached OAuth state and re-add the server to trigger a fresh OAuth flow:
 
 ```bash
 rm -rf ~/.mcp-auth/
+
+# Claude Code
 claude mcp remove notion
 claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp
+
+# Codex
+codex mcp remove notion
+codex mcp add notion -- npx -y mcp-remote https://mcp.notion.com/mcp
 ```
 
-Then restart Claude Code and use `/mcp` or a Notion tool to trigger the OAuth flow again.
+Then restart the current runtime and use a Notion tool to trigger the OAuth flow again.
 
 ## Access Scoping (Read Garden Only)
 
@@ -89,7 +107,7 @@ This ensures the integration is scoped correctly:
 - The "Docs" database (inside Read Garden) is accessible
 - No other team or personal data is exposed
 
-## Notion Plugin for Claude Code
+## Claude-specific Optional Plugin
 
 For a richer experience, install the [Notion plugin for Claude Code](https://github.com/makenotion/claude-code-notion-plugin). It bundles the MCP server along with pre-built Skills and slash commands for common Notion workflows.
 
@@ -108,55 +126,59 @@ For document generation, typical usage is well within limits (~10-20 requests pe
 
 ## Available MCP Tools
 
-Once configured, the Notion MCP server provides these tools (prefixed with `mcp__notion__`):
+Once configured, the Notion MCP server exposes runtime-specific Notion tools.
+
+Codex currently exposes tools such as:
 
 | Tool | Purpose |
 |------|---------|
-| `search` | Search pages and databases by title |
-| `query_database` | Query a database with filters and sorts |
-| `get_page` | Get page properties |
-| `create_page` | Create a new page (in a database or as child of page) |
-| `update_page` | Update page properties |
-| `get_block_children` | Get child blocks of a page/block |
-| `append_block_children` | Append content blocks to a page |
-| `update_block` | Update an existing block |
-| `delete_block` | Delete a block |
-| `get_database` | Get database schema (properties) |
+| `mcp__notion__notion_search` | Search pages and databases |
+| `mcp__notion__notion_fetch` | Fetch a page, database, or data source |
+| `mcp__notion__notion_create_pages` | Create pages with properties and content |
+| `mcp__notion__notion_update_page` | Update page properties or content |
+
+Claude Code should use the equivalent current official Notion MCP tools exposed in that runtime. Do not assume older REST-style names such as `create_page` or `append_block_children` are still present without verifying them first.
 
 ## Troubleshooting
 
-### PKCE code_verifier error (with `--transport http`)
+### PKCE code_verifier error (with native HTTP transport)
 
-Claude Code's built-in HTTP transport has a known PKCE bug. **Use `mcp-remote` instead:**
+If native HTTP transport fails in either runtime, switch back to the shared `mcp-remote` bridge:
 
 ```bash
+# Claude Code
 claude mcp remove notion
 claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp
+
+# Codex
+codex mcp remove notion
+codex mcp add notion -- npx -y mcp-remote https://mcp.notion.com/mcp
 ```
 
 ### OAuth flow doesn't start
 
-- Restart Claude Code and run `/mcp` to check the server status
-- Verify the server is registered: `claude mcp list`
-- If not listed, re-add: `claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp`
+- Restart the current runtime and retry a Notion tool call
+- Verify the server is registered: `claude mcp list` or `codex mcp list`
+- If not listed, re-add it with the matching runtime command above
 
 ### Browser doesn't open for OAuth
 
 - Ensure a browser is accessible from the system
-- Try running `/mcp` in Claude Code to manually trigger authentication
+- In Claude Code, try `/mcp` to inspect the server status
+- In Codex, trigger any Notion tool from a live session
 - Check if a firewall blocks `mcp.notion.com`
 
 ### Wrong workspace selected during OAuth
 
 - Clear cached OAuth state: `rm -rf ~/.mcp-auth/`
-- Remove the server: `claude mcp remove notion`
-- Re-add it: `claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp`
-- Restart Claude Code and complete OAuth again — this time select **only Read Garden**
+- Remove the server for the current runtime
+- Re-add it with the matching `mcp-remote` command above
+- Restart the current runtime and complete OAuth again - this time select **only Read Garden**
 
 ### OAuth token expired / auth stopped working
 
 - Clear cached state: `rm -rf ~/.mcp-auth/`
-- Restart Claude Code to trigger a fresh OAuth flow
+- Restart the current runtime to trigger a fresh OAuth flow
 
 ### No access to pages (empty search results)
 
@@ -173,7 +195,7 @@ claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/m
 ### Rate limited (429 errors)
 
 - Wait 1-2 seconds and retry
-- Batch operations when possible (e.g., append multiple blocks in one call)
+- Batch operations when possible
 - Search is more aggressively limited (30/min) — cache results when feasible
 
 ### Last resort: local server with API token
@@ -186,8 +208,13 @@ If `mcp-remote` also fails, use the open-source local server with a manual Notio
 4. Register with token:
 
 ```bash
+# Claude Code
 claude mcp remove notion
 claude mcp add --scope user notion -e NOTION_TOKEN=ntn_YOUR_TOKEN -- npx -y @notionhq/notion-mcp-server
+
+# Codex
+codex mcp remove notion
+codex mcp add notion --env NOTION_TOKEN=ntn_YOUR_TOKEN -- npx -y @notionhq/notion-mcp-server
 ```
 
 Note: this package is no longer actively maintained but works as a fallback.

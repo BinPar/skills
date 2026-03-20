@@ -11,6 +11,16 @@ description: >
 
 # BinPar Setup
 
+## Runtime Compatibility
+
+This skill supports Claude Code and Codex as equal targets.
+
+- Use AskQuestionTool or the current runtime's equivalent structured question/input mechanism when available.
+- Prefer option-based prompts over free-text questions whenever possible.
+- If no structured question tool is available, ask directly in chat.
+- Use `claude mcp ...` commands in Claude Code and `codex mcp ...` commands in Codex.
+- Use the same Google Workspace setup flow in both environments unless the runtime-specific MCP handling differs.
+
 Guides through installing and authenticating the Google Workspace CLI (GWS CLI) and optionally the Notion MCP server — the foundations for all BinPar skills that interact with Google Workspace and Notion.
 
 The setup should be fully interactive, easy, and require minimal user effort. Ask questions, provide defaults, and guide the user step by step.
@@ -176,11 +186,9 @@ CI=true gws drive files list --params '{"pageSize": 3}'
 
 This should return a JSON response with files from the user's Google Drive.
 
-## Step 8: Configure Claude Code Permissions
+## Step 8: Note on Runtime Permissions
 
-Suggest adding GWS CLI to the Claude Code allow list so future commands don't require manual approval:
-
-Tell the user they can add `Bash(gws *)` to their allow list in Claude Code settings to auto-approve all GWS CLI commands.
+If the current runtime has an allow-list or command approval system, suggest approving trusted `gws` commands once setup is complete so future workflow runs are smoother.
 
 ## Step 9: Confirm Google Setup Complete
 
@@ -194,7 +202,7 @@ Let the user know they can now use BinPar skills that depend on Google Workspace
 
 ## Step 10: Ask About Notion Setup
 
-After completing Google setup, ask the user if they also want to configure the Notion MCP server for internal document generation. Use AskUserQuestion with options:
+After completing Google setup, ask the user if they also want to configure the Notion MCP server for internal document generation. Use AskQuestionTool or the current runtime's equivalent structured question flow when available; otherwise ask directly in chat:
 
 - **Yes, set up Notion** (Recommended) — enables creating documents directly in Notion
 - **Skip for now** — can be set up later
@@ -207,29 +215,37 @@ Read `references/notion-setup-guide.md` for detailed reference.
 
 ### 11.1 Check if already configured
 
-Check if the Notion MCP server is already registered:
+Check if the Notion MCP server is already registered. Run only the command that matches the current runtime:
 
 ```bash
+# Claude Code
 claude mcp list 2>&1 | grep -i notion
+
+# Codex
+codex mcp list 2>&1 | grep -i notion
 ```
 
 If already present and working, skip to Step 12.
 
 ### 11.2 Register the Notion MCP server
 
-Use `mcp-remote` as a STDIO bridge to Notion's hosted MCP server. This avoids known PKCE/OAuth bugs in Claude Code's HTTP transport and handles OAuth independently:
+Use `mcp-remote` as a STDIO bridge to Notion's hosted MCP server. This gives the team one consistent setup path across Claude Code and Codex and keeps OAuth handling outside the runtime. Run only the command that matches the current runtime:
 
 ```bash
+# Claude Code
 claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp
+
+# Codex
+codex mcp add notion -- npx -y mcp-remote https://mcp.notion.com/mcp
 ```
 
 This registers the official Notion MCP server (hosted by Notion) via a local STDIO bridge. The `mcp-remote` package manages OAuth state in `~/.mcp-auth/` — no manual tokens needed.
 
-> **Why not `--transport http`?** Claude Code's built-in HTTP OAuth has a known PKCE `code_verifier` bug that causes authentication failures. Using `mcp-remote` as a STDIO bridge works around this reliably.
+> **Why standardize on `mcp-remote`?** Claude Code has known HTTP OAuth edge cases, and using the same `mcp-remote` bridge in both runtimes keeps the team's setup and troubleshooting path aligned.
 
 ### 11.3 Authenticate via OAuth
 
-After registering, the user needs to trigger the OAuth flow. Tell them to restart Claude Code and then run `/mcp` or use any Notion tool — `mcp-remote` will open the browser automatically for OAuth.
+After registering, the user needs to trigger the OAuth flow. Tell them to restart the current runtime and then either open its MCP status UI or use any Notion tool — `mcp-remote` will open the browser automatically for OAuth.
 
 When the browser opens:
 1. User signs in to Notion (if not already)
@@ -246,7 +262,7 @@ After the user completes the OAuth flow, verify the connection works using the N
 - Search for pages to confirm access
 - Look for the "Docs" database
 
-If the tools aren't available yet, tell the user to run `/mcp` to check the server status and complete authentication if needed.
+If the tools aren't available yet, tell the user to re-open the current runtime's MCP status view or use a Notion tool to complete authentication if needed.
 
 ## Step 13: Final Summary
 
@@ -262,11 +278,11 @@ Summarize everything that was installed and configured:
 - Notion MCP server registered via `mcp-remote` bridge (`https://mcp.notion.com/mcp`)
 - OAuth authentication completed (browser-based, managed by `mcp-remote`)
 - Connected to Read Garden space
-- Scope: user (available across all projects)
+- Runtime-specific registration applied successfully for the current agent
 
 Let the user know they can now use all BinPar skills, including generating documents in both Google Docs and Notion.
 
-**Tip:** Mention the [Notion plugin for Claude Code](https://github.com/makenotion/claude-code-notion-plugin) — it bundles pre-built Skills and slash commands for common Notion workflows, providing a richer experience on top of the MCP server.
+**Tip:** If the user is on Claude Code, optionally mention the [Notion plugin for Claude Code](https://github.com/makenotion/claude-code-notion-plugin) as an additional Claude-specific layer on top of the shared MCP setup.
 
 ## Troubleshooting
 
@@ -282,11 +298,13 @@ Read `references/setup-guide.md` for Google troubleshooting and `references/noti
 - **gcloud verification code mismatch:** Each `gcloud auth login` session generates a unique code challenge. The verification code is tied to that specific session. Never kill and restart the process — the old code won't work with a new session. Use the expect-based approach in Step 3.
 
 ### Notion
-- **OAuth flow doesn't start:** Restart Claude Code and run `/mcp` to check the server status. `mcp-remote` opens the browser automatically on first use.
-- **PKCE code_verifier error:** This happens with `--transport http`. Use the `mcp-remote` STDIO bridge instead: `claude mcp remove notion && claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp`.
-- **Server not listed:** Re-run `claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp`.
-- **Wrong workspace selected during OAuth:** Remove cached OAuth state (`rm -rf ~/.mcp-auth/`) and the server (`claude mcp remove notion`), then re-add and re-authenticate. Select only Read Garden.
+- **OAuth flow doesn't start:** Restart the current runtime and re-open its MCP status view or use a Notion tool. `mcp-remote` opens the browser automatically on first use.
+- **PKCE code_verifier error:** If the user tried the runtime's native HTTP transport, switch back to the `mcp-remote` STDIO bridge for the current runtime.
+- **Server not listed:** Re-run the matching add command:
+  - Claude Code: `claude mcp add --scope user notion -- npx -y mcp-remote https://mcp.notion.com/mcp`
+  - Codex: `codex mcp add notion -- npx -y mcp-remote https://mcp.notion.com/mcp`
+- **Wrong workspace selected during OAuth:** Remove cached OAuth state (`rm -rf ~/.mcp-auth/`) and the server for the current runtime, then re-add and re-authenticate. Select only Read Garden.
 - **No access to pages:** During OAuth, the user must select the Read Garden space and its pages. If they selected a different space, re-authorize.
 - **"Docs" database not found:** The integration only sees pages/databases in the authorized space. Verify Read Garden was selected during OAuth.
 - **Rate limited:** Notion API allows 180 req/min (30 req/min for search). Wait and retry if you hit limits.
-- **mcp-remote auth expired:** Remove cached state with `rm -rf ~/.mcp-auth/` and restart Claude Code to trigger a fresh OAuth flow.
+- **mcp-remote auth expired:** Remove cached state with `rm -rf ~/.mcp-auth/` and restart the current runtime to trigger a fresh OAuth flow.

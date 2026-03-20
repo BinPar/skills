@@ -8,10 +8,21 @@ description: >
   "escribe un email", "compose", "email to", "correo a", "mail a".
   Default language: matches user's conversation language.
   IMPORTANT: Always verify the complete email with the user before sending.
-  IMPORTANT: Always use AskUserQuestion for any decision or confirmation.
+  IMPORTANT: For decisions or confirmations, use AskQuestionTool or the current
+  runtime's equivalent structured question/input mechanism when available,
+  preferring option-based prompts over free-text questions whenever possible.
 ---
 
 # Email Sender
+
+## Runtime Compatibility
+
+This skill supports Claude Code and Codex as equal targets.
+
+- For decisions or confirmations, use AskQuestionTool or the runtime's equivalent structured input flow when available.
+- Prefer option-based prompts over free-text questions whenever possible.
+- If no structured question tool is available, ask directly in chat.
+- Always require explicit final confirmation before creating a draft or sending a message.
 
 Compose and send emails via Gmail API using the `gws` CLI. Supports new emails, replies, reply-all, and forwards with attachments, signatures, and HTML formatting.
 
@@ -52,13 +63,13 @@ Parse the user's request to extract:
 
 | Field | How to infer | If not inferable |
 |---|---|---|
-| **Action type** | New / Reply / Reply-all / Forward | AskUserQuestion |
-| **Recipient(s)** | Names or emails mentioned | AskUserQuestion |
-| **Subject** | Topic from conversation | AskUserQuestion |
-| **Tone** | Formal / semiformal / informal / urgent | Infer from context; if ambiguous → AskUserQuestion |
-| **Language** | User's conversation language | Infer; if ambiguous → AskUserQuestion |
-| **Attachments** | Referenced files | If paths ambiguous → AskUserQuestion |
-| **Key content** | Points to communicate | If insufficient → AskUserQuestion |
+| **Action type** | New / Reply / Reply-all / Forward | Use AskQuestionTool or equivalent; direct chat only if needed |
+| **Recipient(s)** | Names or emails mentioned | Use AskQuestionTool or equivalent; direct chat only if needed |
+| **Subject** | Topic from conversation | Use AskQuestionTool or equivalent; direct chat only if needed |
+| **Tone** | Formal / semiformal / informal / urgent | Infer from context; if ambiguous → use AskQuestionTool or equivalent |
+| **Language** | User's conversation language | Infer; if ambiguous → use AskQuestionTool or equivalent |
+| **Attachments** | Referenced files | If paths ambiguous → use AskQuestionTool or equivalent |
+| **Key content** | Points to communicate | If insufficient → use AskQuestionTool or equivalent |
 
 **Rule**: NEVER assume critical data (recipient, subject). If ambiguous, ask.
 
@@ -69,9 +80,9 @@ Parse the user's request to extract:
 For each mentioned recipient, follow the resolution chain from `references/contact-resolution.md`:
 
 1. **Direct email** — if the user provided a full email address (contains `@`), use it directly
-2. **Directory API** — search by name (if scope available). Always confirm matches with AskUserQuestion
-3. **Gmail history** — search sent/received emails for matching names. Confirm with AskUserQuestion
-4. **Ask directly** — AskUserQuestion: "No encontré el email de [name]. ¿Cuál es?"
+2. **Directory API** — search by name (if scope available). Always confirm matches with AskQuestionTool or equivalent when possible
+3. **Gmail history** — search sent/received emails for matching names. Confirm with AskQuestionTool or equivalent when possible
+4. **Ask directly** — only if no structured question flow is available: "No encontre el email de [name]. Cual es?"
 
 **Important**: Always confirm resolved emails with the user before proceeding. Never send to an unconfirmed address.
 
@@ -84,7 +95,7 @@ CI=true gws gmail users settings sendAs list --params '{"userId":"me"}'
 ```
 
 - **1 sendAs alias** → use it automatically (extract `sendAsEmail`, `displayName`, `signature`)
-- **Multiple aliases** → AskUserQuestion: "¿Desde qué dirección quieres enviar?" with each alias and its displayName
+- **Multiple aliases** → use AskQuestionTool or equivalent to ask which address to send from, showing each alias and its displayName
 - Extract `signature` (HTML) from the selected alias
 - Extract `displayName` for the `From` header
 - If `displayName` is empty → try to extract it from the signature HTML or Gmail profile
@@ -135,7 +146,7 @@ If the user references files:
    - SVG → PNG: use `qlmanage -t -s 2000 -o /tmp "<path>"` (macOS built-in)
    - Other formats: evaluate case by case
 3. **Validate size**: Gmail limit is 25MB total, recommend <10MB
-4. **If oversized** → AskUserQuestion: "El adjunto pesa X MB. ¿Enviarlo igualmente, comprimirlo, o subirlo a Drive y compartir link?"
+4. **If oversized** → use AskQuestionTool or equivalent to ask: "El adjunto pesa X MB. Enviarlo igualmente, comprimirlo, o subirlo a Drive y compartir link?"
 
 ---
 
@@ -213,7 +224,7 @@ Un saludo,
 
 ### 7.2 Ask for action
 
-AskUserQuestion with options:
+Ask the user for the next action using AskQuestionTool or the current runtime's equivalent structured input flow when available, otherwise ask directly in chat:
 1. **Enviar ahora** — send directly via `messages.send`
 2. **Crear borrador en Gmail** — create draft, provide URL for final review
 3. **Editar** — user says what to change, regenerate and ask again
@@ -275,7 +286,7 @@ CI=true gws gmail users messages get \
   --params '{"userId":"me","id":"<msgId>","format":"full"}'
 ```
 
-If the search returns multiple results, show them to the user and AskUserQuestion to select the correct one.
+If the search returns multiple results, show them to the user and ask them to select the correct one.
 
 ### 8.2 Extract data from the original
 
@@ -341,7 +352,7 @@ CI=true gws gmail users messages send \
 | 401 Unauthorized | Token expired | Run `CI=true gws gmail auth login`, show URL in chat |
 | 403 Insufficient scopes | Missing scope | Inform user + offer re-auth via `binpar-setup` |
 | `--upload` path error | .eml file outside working dir | Save .eml in current working directory |
-| Attachment >25MB | Gmail limit | AskUserQuestion: compress, Drive link, or cancel |
+| Attachment >25MB | Gmail limit | Ask whether to compress, upload to Drive, or cancel |
 | `argument list too long` | Raw JSON too large | Use `--upload` with .eml file instead of `--json` inline |
 | Empty display name in From | `formataddr()` not used | Always use `formataddr((name, email))` |
 | Subject encoding issues | UTF-8 characters | Python `email` lib handles encoding automatically |
