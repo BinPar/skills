@@ -31,6 +31,13 @@ Compose and send emails via Gmail API using the `gws` CLI. Supports new emails, 
 - `references/mime-construction.md` — Python MIME message construction patterns
 - `references/contact-resolution.md` — Name-to-email resolution strategy chain
 
+## Rendering Defaults
+
+- Prefer the simplest HTML that satisfies the request. For most internal and executive emails, default to a normal email structure built from `p`, `h2`, `h3`, `ul`, and `hr`.
+- Do NOT default to newsletter-like layouts, full-width wrappers, marketing cards, or complex table-based compositions unless the user explicitly asks for that style.
+- If the email includes visual material, keep the surrounding HTML simple and let the images do the visual work.
+- When the user asks for a "well designed" email, interpret that first as clean hierarchy, good spacing, and readable emphasis, not as a landing-page layout.
+
 ---
 
 ## Step 0: Prerequisites
@@ -110,8 +117,21 @@ CI=true gws gmail users settings sendAs list --params '{"userId":"me"}'
 |---|---|
 | Short email (<5 lines), informal tone | Minimal HTML: `<br>` for line breaks, `<a>` for links |
 | Medium email, semiformal tone | Minimal + `<b>` and `<i>` where content needs it |
-| Long email, formal tone, structured data | Rich HTML: bold, lists `<ul>/<ol>`, tables `<table>`, headers `<h3>` |
+| Long email, formal tone, structured data | Rich email HTML: bold, lists `<ul>/<ol>`, dividers `<hr>`, headers `<h2>/<h3>` |
 | Reply | Same level as original email or simpler |
+
+### 4.1.1 Layout policy
+
+- Rich HTML still means "rich email", not "mini website".
+- For longer structured emails, prefer this progression:
+  1. Introductory paragraphs
+  2. Section headers with `h2`
+  3. Optional subsection headers with `h3`
+  4. Bullet lists for grouped points
+  5. Horizontal separators with `<hr>` between major sections
+- Only use tables for actual tabular data, not for page chrome or multi-column layout, unless the user explicitly asks for a designed newsletter-style composition.
+- If the message is primarily informational, one-column flow is the default.
+- If the message includes images, center them and keep text around them simple.
 
 ### 4.2 Compose the body
 
@@ -135,6 +155,20 @@ CI=true gws gmail users settings sendAs list --params '{"userId":"me"}'
 
 See `references/mime-construction.md` for detailed HTML templates (minimal vs. rich).
 
+### 4.4 If the email includes visual assets
+
+- Treat charts, diagrams, or explanatory images as part of the message body when the user wants them "inside the email".
+- In those cases, prefer inline embedded images via `cid:` over normal visible attachments.
+- Use a stable rendered width for inline visuals: `width="600"` plus `style="max-width:100%;height:auto"` unless the user asks for a different size.
+- Add a short caption or explanatory sentence before or after each image so the email still makes sense if the image is not rendered automatically.
+- Keep the image container simple, for example:
+
+```html
+<p style="text-align:center">
+  <img src="cid:example-chart" alt="Descripcion breve" width="600" style="max-width:100%;height:auto;border-radius:8px">
+</p>
+```
+
 ---
 
 ## Step 5: Handle Attachments
@@ -143,10 +177,17 @@ If the user references files:
 
 1. **Verify existence**: `ls -la "<path>"`
 2. **Check for conversions needed**:
-   - SVG → PNG: use `qlmanage -t -s 2000 -o /tmp "<path>"` (macOS built-in)
+   - SVG → PNG for email visuals: export to a full-size PNG, not a thumbnail
    - Other formats: evaluate case by case
 3. **Validate size**: Gmail limit is 25MB total, recommend <10MB
 4. **If oversized** → use AskQuestionTool or equivalent to ask: "El adjunto pesa X MB. Enviarlo igualmente, comprimirlo, o subirlo a Drive y compartir link?"
+
+### 5.1 Visual asset checks
+
+- If a visual will be embedded inside the email, verify its final render dimensions before building the MIME.
+- Do NOT rely on Quick Look thumbnails or other preview outputs as the final asset for the email body. Those can crop or downscale unpredictably.
+- Prefer full-size exported PNGs with known pixel dimensions.
+- If the visual contains text, review the final image before sending or drafting to confirm nothing is clipped, overlapped, or unreadable.
 
 ---
 
@@ -159,6 +200,8 @@ Use Python to construct the RFC 2822 message. See `references/mime-construction.
 - ALWAYS set the `From` header explicitly
 - UTF-8 encoding is handled by Python's `email` library automatically
 - Save the message as `.eml` file in the current working directory (gws `--upload` requires this)
+- Use `multipart/related` when the email body embeds inline images via `cid:`
+- Use `multipart/mixed` when the email only has ordinary attachments and no inline body assets
 
 ```python
 from email.mime.multipart import MIMEMultipart
@@ -195,6 +238,15 @@ for filepath in attachments:
 with open('./email_to_send.eml', 'wb') as f:
     f.write(msg.as_bytes())
 ```
+
+### 6.1 MIME choice rules
+
+- **No attachments, no inline images** → simple HTML message is fine
+- **Regular attachments only** → `multipart/mixed`
+- **Inline body images** → `multipart/related`, with an `alternative` child for plain text + HTML
+- **Inline body images plus ordinary attachments** → outer `multipart/mixed`, inner `multipart/related`, then attach the regular files after the related block
+
+See `references/mime-construction.md` for full examples.
 
 ---
 

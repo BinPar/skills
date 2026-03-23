@@ -5,17 +5,18 @@ Shared BinPar skills for team workflows in both Claude Code and Codex. The skill
 ## Available Skills
 
 
-| Skill           | Description                                                        | Example Triggers                                                      |
-| --------------- | ------------------------------------------------------------------ | --------------------------------------------------------------------- |
-| `binpar-setup`  | Installs and configures Google Workspace CLI + Notion MCP          | "Set up BinPar tools", "install gws", "configure notion"              |
-| `doc-generator` | Generates documents in Google Docs or Notion                       | "Crea una propuesta para...", "genera un documento", "create in Notion" |
-| `email-sender`  | Composes, drafts, replies to, and sends Gmail messages via `gws`   | "send email", "envia un correo", "reply to this thread"              |
+| Skill              | Description                                                        | Example Triggers                                                        |
+| ------------------ | ------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `binpar-setup`     | Installs and configures Google Workspace CLI + Notion MCP          | "Set up BinPar tools", "install gws", "configure notion"                |
+| `doc-generator`    | Generates documents in Google Docs or Notion                       | "Crea una propuesta para...", "genera un documento", "create in Notion" |
+| `email-sender`     | Composes, drafts, replies to, and sends Gmail messages via `gws`   | "send email", "envia un correo", "reply to this thread"                 |
+| `slides-generator` | Creates branded Google Slides presentations with generated visuals | "Crea una presentación", "genera slides", "make a pitch deck"           |
 
 
 ## Quick Start
 
 ```bash
-npx skills add BinPar/skills --all
+npx skills add BinPar/skills
 ```
 
 This installs the skills for all supported agents on the machine. If you only want the current agent, run `npx skills add BinPar/skills`.
@@ -37,10 +38,12 @@ git clone git@github.com:BinPar/skills.git ~/dev/binpar-skills
 ln -s ~/dev/binpar-skills/binpar-setup ~/.claude/skills/binpar-setup
 ln -s ~/dev/binpar-skills/doc-generator ~/.claude/skills/doc-generator
 ln -s ~/dev/binpar-skills/email-sender ~/.claude/skills/email-sender
+ln -s ~/dev/binpar-skills/slides-generator ~/.claude/skills/slides-generator
 
 ln -s ~/dev/binpar-skills/binpar-setup ~/.codex/skills/binpar-setup
 ln -s ~/dev/binpar-skills/doc-generator ~/.codex/skills/doc-generator
 ln -s ~/dev/binpar-skills/email-sender ~/.codex/skills/email-sender
+ln -s ~/dev/binpar-skills/slides-generator ~/.codex/skills/slides-generator
 ```
 
 ## Prerequisites
@@ -80,6 +83,7 @@ Key benefits:
 The `doc-generator` skill supports two output backends:
 
 **Google Docs** (client-facing, polished):
+
 1. Copies BinPar's corporate template (preserves all formatting)
 2. Reads the document structure via API (character indices, styles)
 3. Maps content blocks using the structural reference
@@ -87,10 +91,22 @@ The `doc-generator` skill supports two output backends:
 5. Result: professionally formatted document matching the template exactly
 
 **Notion** (internal, simpler):
+
 1. Locates the "Docs" database in the Read Garden space
 2. Fetches the target database or data source details required by the current runtime
 3. Creates a new page with metadata properties (Client, Date, Author, Type) and structured content
 4. Result: well-organized Notion page in the team's Docs database
+
+### Presentation Generation
+
+The `slides-generator` skill creates Google Slides presentations from BinPar's dark-themed template:
+
+1. Copies the branded template (dark purple background, orange accents, Poppins/Roboto fonts)
+2. Autonomously plans slide count, layout selection, and visual strategy
+3. Duplicates needed layout slides from the template catalog, deletes unused ones
+4. Spawns parallel subagents to generate SVG visuals (diagrams, charts, illustrations)
+5. Converts SVGs to PNG, uploads to Drive, inserts into slides at precise coordinates
+6. Fills text content, generates TOC, and returns the presentation URL
 
 ## Adding New Skills
 
@@ -124,16 +140,16 @@ If you need a manual symlink instead, link the skill into the matching agent dir
 ## Troubleshooting
 
 
-| Issue                        | Solution                                                                       |
-| ---------------------------- | ------------------------------------------------------------------------------ |
-| `gws: command not found`     | Run `npm install -g @googleworkspace/cli` or ask the current agent: "Set up BinPar tools" |
-| Auth expired                 | Run `gws auth login`                                                           |
-| Node.js too old              | Upgrade to Node.js 18+                                                         |
-| Permission denied on symlink | Check the target agent directory (`~/.claude/skills/` or `~/.codex/skills/`) exists and is writable |
-| Template not accessible      | Verify Google Drive sharing permissions on the template document               |
+| Issue                        | Solution                                                                                                                |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `gws: command not found`     | Run `npm install -g @googleworkspace/cli` or ask the current agent: "Set up BinPar tools"                               |
+| Auth expired                 | Run `gws auth login`                                                                                                    |
+| Node.js too old              | Upgrade to Node.js 18+                                                                                                  |
+| Permission denied on symlink | Check the target agent directory (`~/.claude/skills/` or `~/.codex/skills/`) exists and is writable                     |
+| Template not accessible      | Verify Google Drive sharing permissions on the template document                                                        |
 | Notion MCP not starting      | Re-check server registration with `claude mcp list` or `codex mcp list`, then re-add the server for the current runtime |
-| Notion: no access to pages   | Re-authorize OAuth and select Read Garden during consent                       |
-| Notion: auth expired         | Remove the current runtime's `notion` server, clear `~/.mcp-auth/` if needed, then re-add and re-authenticate |
+| Notion: no access to pages   | Re-authorize OAuth and select Read Garden during consent                                                                |
+| Notion: auth expired         | Remove the current runtime's `notion` server, clear `~/.mcp-auth/` if needed, then re-add and re-authenticate           |
 
 
 ## Team Onboarding Checklist
@@ -145,3 +161,4 @@ If you need a manual symlink instead, link the skill into the matching agent dir
 5. Verify Notion: re-open the current agent session and ask "verify Notion connection"
 6. Test Google Docs: "Crea un documento de prueba"
 7. Test Notion: "Crea un documento interno en Notion"
+

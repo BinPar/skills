@@ -77,6 +77,89 @@ raw = base64.urlsafe_b64encode(msg.as_bytes()).decode()
 
 ---
 
+## Email with Inline Body Images (multipart/related)
+
+Use this when charts, diagrams, or explanatory visuals should appear inside the message body instead of as normal visible attachments.
+
+```python
+import os
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.utils import formataddr
+
+msg_root = MIMEMultipart('related')
+msg_root['From'] = formataddr((display_name, send_as_email))
+msg_root['To'] = formataddr((recipient_name, recipient_email))
+msg_root['Subject'] = subject
+
+alt = MIMEMultipart('alternative')
+alt.attach(MIMEText(plain_body, 'plain', 'utf-8'))
+alt.attach(MIMEText(html_body, 'html', 'utf-8'))
+msg_root.attach(alt)
+
+with open('./chart.png', 'rb') as f:
+    img = MIMEImage(f.read(), _subtype='png')
+img.add_header('Content-ID', '<chart>')
+img.add_header('Content-Disposition', 'attachment', filename='chart.png')
+img.add_header('X-Attachment-Id', '')
+msg_root.attach(img)
+```
+
+Use the image in HTML like this:
+
+```html
+<p style="text-align:center">
+  <img src="cid:chart" alt="Chart description" width="600"
+       style="max-width:100%;height:auto;border-radius:8px">
+</p>
+```
+
+**Why this pattern:** Gmail reliably renders this shape for inline visuals while still preserving the image part as an attachment-backed MIME node.
+
+---
+
+## Email with Inline Images and Regular Attachments
+
+If the email needs both inline body visuals and ordinary attachments, nest the MIME structure:
+
+```python
+from email.mime.base import MIMEBase
+from email.mime.image import MIMEImage
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email import encoders
+
+msg = MIMEMultipart('mixed')
+msg['From'] = formataddr((display_name, send_as_email))
+msg['To'] = formataddr((recipient_name, recipient_email))
+msg['Subject'] = subject
+
+related = MIMEMultipart('related')
+alt = MIMEMultipart('alternative')
+alt.attach(MIMEText(plain_body, 'plain', 'utf-8'))
+alt.attach(MIMEText(html_body, 'html', 'utf-8'))
+related.attach(alt)
+
+with open('./diagram.png', 'rb') as f:
+    inline_img = MIMEImage(f.read(), _subtype='png')
+inline_img.add_header('Content-ID', '<diagram>')
+inline_img.add_header('Content-Disposition', 'attachment', filename='diagram.png')
+inline_img.add_header('X-Attachment-Id', '')
+related.attach(inline_img)
+
+msg.attach(related)
+
+with open('./report.pdf', 'rb') as f:
+    part = MIMEBase('application', 'pdf')
+    part.set_payload(f.read())
+encoders.encode_base64(part)
+part.add_header('Content-Disposition', 'attachment', filename='report.pdf')
+msg.attach(part)
+```
+
+---
+
 ## Reply / Forward Headers
 
 For replies, add these headers to maintain the thread:
@@ -161,6 +244,46 @@ html_body = f"""<div dir="ltr">
 </div>
 ```
 
+### Structured Executive Email
+
+Use this for internal summaries, executive updates, or any email that should feel polished without becoming a newsletter.
+
+```html
+<div dir="ltr">
+  <p>Hola Cristian,</p>
+
+  <p>Resumen breve del objetivo del correo.</p>
+
+  <hr style="border:none;border-top:2px solid #ff9900;margin:25px 0">
+
+  <h2 style="color:#211253;font-size:20px">1. Primera sección</h2>
+  <p>Texto de contexto.</p>
+  <ul>
+    <li>Punto 1</li>
+    <li>Punto 2</li>
+  </ul>
+
+  <hr style="border:none;border-top:1px solid #ddd;margin:25px 0">
+
+  <h2 style="color:#211253;font-size:20px">2. Segunda sección</h2>
+  <h3 style="color:#6446b4;font-size:16px">Subsección</h3>
+  <p>Más detalle.</p>
+
+  <p style="text-align:center">
+    <img src="cid:visual" alt="Descripcion breve" width="600"
+         style="max-width:100%;height:auto;border-radius:8px">
+  </p>
+
+  <p>Un saludo,</p>
+  <br>
+  <div class="gmail_signature">
+    <!-- signature already includes name, title, contact info -->
+  </div>
+</div>
+```
+
+**Default rule:** This is usually the right pattern for "maquetalo bien" unless the user explicitly asks for a more designed marketing-style email.
+
 ---
 
 ## Saving to .eml File
@@ -184,3 +307,7 @@ with open(eml_path, 'wb') as f:
 4. **Signature HTML** goes inside `<div class="gmail_signature">` — never inline it in the body text
 5. **Clean up `.eml` files** after successful send/draft creation
 6. **File size limit**: Gmail allows up to 25MB total, recommend staying under 10MB
+7. **Prefer simple HTML structure** for executive/internal emails — avoid overdesign by default
+8. **Use `width="600"` plus `max-width:100%`** for inline visuals unless the user asks otherwise
+9. **Do not use preview thumbnails as final assets** — export full-size PNGs for email visuals
+10. **Check embedded visuals before drafting/sending** if they contain text or tight layouts
