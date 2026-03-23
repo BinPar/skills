@@ -78,8 +78,10 @@ cat > ./slide_assets/slide_N_img_M.html << EOF
 EOF
 
 # 2. Screenshot the HTML wrapper (not the SVG directly)
+#    --force-device-scale-factor=2 renders at 2x pixel density for sharper output
 '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' \
   --headless --disable-gpu --no-sandbox \
+  --force-device-scale-factor=2 \
   --screenshot=./slide_assets/slide_N_img_M.png \
   --window-size=${TARGET_WIDTH},${TARGET_HEIGHT} \
   "file://$(pwd)/slide_assets/slide_N_img_M.html"
@@ -234,7 +236,59 @@ Image 3 (right):
 "transform": {"scaleX": 1, "scaleY": 1, "translateX": 418.0, "translateY": 0.0, "unit": "PT"}
 ```
 
-## Step 8: Cleanup
+## Step 8: Visual Verification (MANDATORY)
+
+After inserting all images, visually verify every slide that contains generated images. This step catches clipping, white borders, misalignment, and quality issues that are invisible from the API alone.
+
+### 8.1 Get slide thumbnails
+
+For each slide that has images, request a thumbnail using the Slides API:
+
+```bash
+CI=true gws slides presentations.pages getThumbnail \
+  --params '{"presentationId": "PRES_ID", "pageObjectId": "SLIDE_OBJECT_ID", "thumbnailProperties.thumbnailSize": "LARGE"}'
+```
+
+This returns a JSON with a `contentUrl` field — a temporary URL to a PNG thumbnail of the rendered slide.
+
+### 8.2 Download and inspect
+
+Download the thumbnail and inspect it visually using the Read tool (which supports images):
+
+```bash
+curl -sL "THUMBNAIL_CONTENT_URL" -o /tmp/slide_N_thumb.png
+```
+
+Then use the Read tool on `/tmp/slide_N_thumb.png` to view it.
+
+### 8.3 Check for issues
+
+When inspecting each thumbnail, verify:
+
+- [ ] **No clipping:** All image content is visible within the slide boundaries — no text or shapes cut off at edges
+- [ ] **No white borders:** The image blends seamlessly with the dark slide background (#222033) on all sides
+- [ ] **Correct positioning:** The image is in the expected slot (left, right, center, full) without overlap on text elements
+- [ ] **Text readability:** Any text within the generated image is legible at the thumbnail resolution
+- [ ] **Visual quality:** The image looks clean and professional, not blurry or pixelated
+
+### 8.4 Fix issues if found
+
+If any check fails:
+
+1. **Clipping:** The SVG content exceeds the viewBox. Regenerate the SVG with more padding (add 10-15% margin inside the viewBox) or simplify the content to fit.
+2. **White borders:** The `<rect fill="#222033"/>` background is missing or doesn't cover the full viewBox. Fix the SVG and reconvert.
+3. **Misalignment:** Delete the image and re-insert with corrected coordinates.
+4. **Poor quality:** Reconvert using `--force-device-scale-factor=2` in Chrome for higher pixel density, or switch to cairosvg.
+
+After fixing, re-insert the image and re-verify. Repeat until all slides pass.
+
+### 8.5 Cleanup thumbnails
+
+```bash
+rm -f /tmp/slide_*_thumb.png
+```
+
+## Step 9: Cleanup
 
 After all images are successfully inserted, clean up temporary files:
 
@@ -261,6 +315,9 @@ rm -rf ./slide_assets/
 | createImage | 400 error | URL not accessible — verify permission was set; try re-uploading |
 | createImage | 400 "invalid image" | PNG may be corrupt — reconvert from SVG or regenerate |
 | Cleanup fails | 404 on delete | File may already be deleted; non-critical, log and continue |
+| Visual check: clipping | SVG content exceeds viewBox | Regenerate SVG with 10-15% internal padding or simplify content |
+| Visual check: white borders | Missing background rect or Chrome margin | Verify `<rect fill="#222033"/>` is first SVG element; use HTML wrapper |
+| Visual check: blurry/low quality | 1x rendering | Add `--force-device-scale-factor=2` to Chrome command |
 
 ## Conversion Tool Installation
 

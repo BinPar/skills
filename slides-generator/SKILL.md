@@ -375,6 +375,44 @@ Use the exact position values from `references/template-structure.md` § Image I
 
 ---
 
+## Step 9b: Visual Verification of Images (MANDATORY)
+
+After all images are inserted, **you MUST verify every slide with images visually**. This is not optional — SVG generation is error-prone and issues like clipping, white borders, or cut-off content are only detectable visually.
+
+### 9b.1 Get slide thumbnails
+
+For each slide that contains generated images, get a rendered thumbnail:
+
+```bash
+CI=true gws slides presentations.pages getThumbnail \
+  --params '{"presentationId": "PRES_ID", "pageObjectId": "SLIDE_OBJECT_ID", "thumbnailProperties.thumbnailSize": "LARGE"}'
+```
+
+### 9b.2 Download and inspect visually
+
+```bash
+curl -sL "THUMBNAIL_CONTENT_URL" -o /tmp/slide_N_thumb.png
+```
+
+Then **use the Read tool** on the downloaded PNG file to visually inspect it. The Read tool supports images and will show you the rendered slide.
+
+### 9b.3 Verify checklist
+
+For each slide, confirm:
+- **No clipping** — all image content fits within the slide, nothing cut off at edges
+- **No white borders** — image blends with dark background seamlessly
+- **Correct position** — image is in the right slot without overlapping text
+- **Text in image is readable** — labels, numbers, etc. are legible
+- **Quality is acceptable** — not blurry, pixelated, or distorted
+
+### 9b.4 Regenerate if needed
+
+If any issue is found, regenerate the SVG with fixes (add padding for clipping, fix background for borders, simplify for quality), reconvert, re-upload, re-insert, and **re-verify**.
+
+See `references/image-pipeline.md` Step 8 for detailed recovery procedures per issue type.
+
+---
+
 ## Step 10: Fill Text Content
 
 For each slide, replace the template placeholder text with generated content. Use one of two strategies:
