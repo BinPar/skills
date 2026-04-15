@@ -5,12 +5,13 @@ Shared BinPar skills for team workflows in both Claude Code and Codex. The skill
 ## Available Skills
 
 
-| Skill              | Description                                                        | Example Triggers                                                        |
-| ------------------ | ------------------------------------------------------------------ | ----------------------------------------------------------------------- |
-| `binpar-setup`     | Installs and configures Google Workspace CLI + Notion MCP          | "Set up BinPar tools", "install gws", "configure notion"                |
-| `doc-generator`    | Generates documents in Google Docs or Notion                       | "Crea una propuesta para...", "genera un documento", "create in Notion" |
-| `email-sender`     | Composes, drafts, replies to, and sends Gmail messages via `gws`   | "send email", "envia un correo", "reply to this thread"                 |
-| `slides-generator` | Creates branded Google Slides presentations with generated visuals | "Crea una presentación", "genera slides", "make a pitch deck"           |
+| Skill                     | Description                                                                      | Example Triggers                                                                  |
+| ------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `binpar-setup`            | Installs and configures Google Workspace CLI + Notion MCP                        | "Set up BinPar tools", "install gws", "configure notion"                          |
+| `doc-generator`           | Generates documents in Google Docs or Notion                                     | "Crea una propuesta para...", "genera un documento", "create in Notion"           |
+| `email-sender`            | Composes, drafts, replies to, and sends Gmail messages via `gws`                 | "send email", "envia un correo", "reply to this thread"                           |
+| `slides-generator`        | Creates branded BinPar Google Slides presentations with generated visuals        | "Crea una presentación", "genera slides", "make a pitch deck"                     |
+| `slides-generator-sermas` | Creates institutional Google Slides decks using the Sermas / Comunidad de Madrid — Consejería de Digitalización template | "Crea una presentación sermas", "deck sermas", "presentación comunidad de madrid", "madrid salud digital slides" |
 
 
 ## Quick Start
@@ -39,11 +40,13 @@ ln -s ~/dev/binpar-skills/binpar-setup ~/.claude/skills/binpar-setup
 ln -s ~/dev/binpar-skills/doc-generator ~/.claude/skills/doc-generator
 ln -s ~/dev/binpar-skills/email-sender ~/.claude/skills/email-sender
 ln -s ~/dev/binpar-skills/slides-generator ~/.claude/skills/slides-generator
+ln -s ~/dev/binpar-skills/slides-generator-sermas ~/.claude/skills/slides-generator-sermas
 
 ln -s ~/dev/binpar-skills/binpar-setup ~/.codex/skills/binpar-setup
 ln -s ~/dev/binpar-skills/doc-generator ~/.codex/skills/doc-generator
 ln -s ~/dev/binpar-skills/email-sender ~/.codex/skills/email-sender
 ln -s ~/dev/binpar-skills/slides-generator ~/.codex/skills/slides-generator
+ln -s ~/dev/binpar-skills/slides-generator-sermas ~/.codex/skills/slides-generator-sermas
 ```
 
 ## Prerequisites
@@ -99,14 +102,36 @@ The `doc-generator` skill supports two output backends:
 
 ### Presentation Generation
 
-The `slides-generator` skill creates Google Slides presentations from BinPar's dark-themed template:
+Two skills generate Google Slides decks from BinPar-maintained templates. They share the same pipeline (copy template → plan → duplicate layout slides → optional parallel SVG subagents → convert/upload/insert images → fill text → return URL) but target different audiences and templates.
 
-1. Copies the branded template (dark purple background, orange accents, Poppins/Roboto fonts)
+**`slides-generator` — BinPar pitch decks (client-facing):**
+
+1. Copies the BinPar branded template (dark purple background, orange accents, Poppins/Roboto fonts)
 2. Autonomously plans slide count, layout selection, and visual strategy
 3. Duplicates needed layout slides from the template catalog, deletes unused ones
 4. Spawns parallel subagents to generate SVG visuals (diagrams, charts, illustrations)
 5. Converts SVGs to PNG, uploads to Drive, inserts into slides at precise coordinates
 6. Fills text content, generates TOC, and returns the presentation URL
+
+**`slides-generator-sermas` — Sermas / Comunidad de Madrid institutional decks:**
+
+1. Copies the Sermas template (white background, `#2F5597` blue accent, Calibri/Arial, Comunidad de Madrid logo inherited from layout)
+2. Follows a fixed, text-forward slide sequence: cover → TOC (capped at 8 sections) → content slides → optional ANEXO divider → immutable GRACIAS closing
+3. Duplicates the single reusable content layout (`p3`) per section — single-column only, no two-column / big-number / cards variants
+4. SVG visuals are optional (most Sermas decks are text-only); when used, the same subagent pipeline applies with Sermas brand kit
+5. Applies canonical text styles after each insert (mandatory — `deleteText` + `insertText` leaves runs in an inconsistent state; numeral, title, body, and TOC slots each have a required `updateTextStyle` reset)
+6. Returns the presentation URL in Spanish by default
+
+Key differences between the two skills:
+
+| Dimension | `slides-generator` (BinPar) | `slides-generator-sermas` |
+|-----------|-----------------------------|---------------------------|
+| Audience  | Clients, pitches, proposals | Public sector, healthcare, Madrid regional government |
+| Aesthetic | Dark, visual-first, pitch   | White, text-forward, institutional |
+| Layouts   | Multiple (columns, cards, big numbers, hero) | Single content layout |
+| TOC       | Flexible                    | Hard cap of 8 sections |
+| Visuals   | Default: yes                | Default: no (opt-in) |
+| Closing   | Contact card                | Fixed "GRACIAS" slide (immutable) |
 
 ## Adding New Skills
 
