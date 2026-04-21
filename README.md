@@ -12,6 +12,7 @@ Shared BinPar skills for team workflows in both Claude Code and Codex. The skill
 | `email-sender`            | Composes, drafts, replies to, and sends Gmail messages via `gws`                 | "send email", "envia un correo", "reply to this thread"                           |
 | `slides-generator`        | Creates branded BinPar Google Slides presentations with generated visuals        | "Crea una presentación", "genera slides", "make a pitch deck"                     |
 | `slides-generator-sermas` | Creates institutional Google Slides decks using the Sermas / Comunidad de Madrid — Consejería de Digitalización template | "Crea una presentación sermas", "deck sermas", "presentación comunidad de madrid", "madrid salud digital slides" |
+| `docs-generator-sermas`   | Generates Sermas / DGSD Word documents (Google Docs) from the 4 official templates: DPE (alcance funcional), OP_GEN (genérico), OP_ACR (acta) and OC_MAN (manual multi-perfil) | "DPE sermas", "alcance funcional", "acta sermas", "manual de usuario sermas", "documento genérico sermas", "OC_DPE", "OP_ACR", "OP_GEN", "OC_MAN" |
 
 
 ## Quick Start
@@ -41,12 +42,14 @@ ln -s ~/dev/binpar-skills/doc-generator ~/.claude/skills/doc-generator
 ln -s ~/dev/binpar-skills/email-sender ~/.claude/skills/email-sender
 ln -s ~/dev/binpar-skills/slides-generator ~/.claude/skills/slides-generator
 ln -s ~/dev/binpar-skills/slides-generator-sermas ~/.claude/skills/slides-generator-sermas
+ln -s ~/dev/binpar-skills/docs-generator-sermas ~/.claude/skills/docs-generator-sermas
 
 ln -s ~/dev/binpar-skills/binpar-setup ~/.codex/skills/binpar-setup
 ln -s ~/dev/binpar-skills/doc-generator ~/.codex/skills/doc-generator
 ln -s ~/dev/binpar-skills/email-sender ~/.codex/skills/email-sender
 ln -s ~/dev/binpar-skills/slides-generator ~/.codex/skills/slides-generator
 ln -s ~/dev/binpar-skills/slides-generator-sermas ~/.codex/skills/slides-generator-sermas
+ln -s ~/dev/binpar-skills/docs-generator-sermas ~/.codex/skills/docs-generator-sermas
 ```
 
 ## Prerequisites
@@ -132,6 +135,30 @@ Key differences between the two skills:
 | TOC       | Flexible                    | Hard cap of 8 sections |
 | Visuals   | Default: yes                | Default: no (opt-in) |
 | Closing   | Contact card                | Fixed "GRACIAS" slide (immutable) |
+
+### Sermas Docs Generation
+
+**`docs-generator-sermas`** is a umbrella skill for the 4 official Sermas (Comunidad de Madrid — DGSD) Word document templates, routed by intent:
+
+1. **OC_DPE** — Documento de Petición / Alcance Funcional. "Living doc" per project: the Sermas gestor pre-fills the cover + metadata tables, and the skill only touches the editable sections (§1 Introducción, §2 Requisitos, §3 Descripción Funcional). Supports override of the canon template ID when the user passes a project-specific DPE URL.
+2. **OP_GEN** — Documento genérico. 100% free body structure (the user dictates H1/H2/H3 chapters); the skill fills the cover, Hoja de Control, and replaces the placeholder chapters with real content.
+3. **OP_ACR** — Acta de Reunión. Three structured tables (asistentes, resoluciones, próximos pasos) populated from a list-of-dicts input; header + footer carry additional placeholders (`<CODIGO PROYECTO>` without accent, `[Nombre del Proyecto]` with brackets, `<Departamento que realiza el documento >` with trailing space — all covered by the skill).
+4. **OC_MAN** — Manual de Usuario multi-perfil. Generates **N documents in one execution** (one per user profile), with 5 common sections + 3 profile-specific sections (Guía de utilización, Preguntas frecuentes, Posibles incidencias).
+
+All 4 flows share a **create vs update mode**:
+
+- **Create**: copies the canon Google Doc template, runs `replaceAllText` on cover + header + footer, rewrites the editable body sections via `deleteContentRange` + `insertText` (end-to-start by index), and populates the first row of "Control de cambios".
+- **Update**: accepts a Google Doc URL/ID, detects the document type by heading structure, rewrites only the sections the user specifies, and bumps the Hoja de Control (`+0.01` by default) with a new row describing the change.
+
+Hard-won quirks encoded in the references (via end-to-end test runs):
+
+- Never mix `deleteContentRange` inside table cells with `deleteTableRow` in the same batch — the API collapses unintended rows. Always separate batches with a re-read in between.
+- Row deletions of empty template rows should happen **before** populating data rows; otherwise the first deletion occasionally wipes freshly inserted data.
+- `deleteContentRange` + `insertText` inherits the `namedStyleType` of the deleted paragraph. Replacing a `HEADING_1` with body prose requires a follow-up `updateParagraphStyle` to `NORMAL_TEXT`.
+- Placeholders live in **three segments** — `body`, `headers`, and `footers`. Scanning only the body leaves placeholders like `<Equipo que realiza el documento>` in the final deliverable.
+- Two placeholder syntaxes coexist: `<...>` (most) and `[...]` (ACR header `kix.hf3`). Both must be covered.
+
+Output is **always a Google Doc** (no `.docx` export) — the user exports manually when delivering to the client.
 
 ## Adding New Skills
 
