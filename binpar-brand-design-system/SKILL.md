@@ -117,6 +117,7 @@ Borders are translucent white: `rgba(245,241,248,0.1)` default / `0.06` soft / y
 ### Surfaces & Motion
 - Page = `#09080C` + violet gradient + interactive dotted background behind everything.
 - Panels: 28px radius, 1px translucent border, gradient fill, blur, heavy soft shadow.
+- **The dotted texture must never show through a surface.** Any translucent panel/card layered over the interactive background carries the same `backdrop-blur` (the blur dissolves the dot grid) — this applies to *every* glass surface, not just the large bands. Surfaces that don't blur must be fully opaque (e.g. code blocks on `#111016`). A translucent card with no blur lets the grid bleed through and reads as a brand defect.
 - 180ms ease for controls; focus = yellow border + soft yellow ring; selection/scrollbar are yellow.
 - All decorative motion respects `prefers-reduced-motion`.
 
@@ -231,7 +232,7 @@ When reviewing or producing any BinPar artifact, verify:
 
 **Request**: "Create a metrics panel for a BinPar app"
 
-**Expected behavior**: Dark page (`#09080C` + gradient) with InteractiveBackground behind. Panel with 28px radius, translucent gradient fill, 1px `rgba(245,241,248,0.1)` border, `backdrop-blur(10px)`, `--ui-shadow-panel`. Muted uppercase eyebrow (Poppins, 0.68rem, 0.22em tracking) + SemiBold title. Metric cards at 18px radius with soft borders. Values in Poppins; good/bad states in teal/red; the key highlight in yellow.
+**Expected behavior**: Dark page (`#09080C` + gradient) with InteractiveBackground behind. Panel with 28px radius, translucent gradient fill, 1px `rgba(245,241,248,0.1)` border, `backdrop-blur(10px)`, `--ui-shadow-panel`. Muted uppercase eyebrow (Poppins, 0.68rem, 0.22em tracking) + SemiBold title. Metric cards at 18px radius with soft borders — translucent fill + the same `backdrop-blur` so the dot grid never shows through. Values in Poppins; good/bad states in teal/red; the key highlight in yellow.
 
 ### Example 2: Landing hero
 
