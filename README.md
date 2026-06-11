@@ -7,6 +7,7 @@ Shared BinPar skills for team workflows in both Claude Code and Codex. The skill
 
 | Skill                     | Description                                                                      | Example Triggers                                                                  |
 | ------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| `binpar-brand-design-system` | BinPar brand design system: colors, typography, logos, dark theme, UI tokens and landing patterns (from bi-productive) | "Aplica la marca BinPar", "colores de BinPar", "BinPar design tokens", "logo BinPar", "UI estilo BinPar" |
 | `binpar-setup`            | Installs and configures Google Workspace CLI + Notion MCP                        | "Set up BinPar tools", "install gws", "configure notion"                          |
 | `doc-generator`           | Generates documents in Google Docs or Notion                                     | "Crea una propuesta para...", "genera un documento", "create in Notion"           |
 | `email-sender`            | Composes, drafts, replies to, and sends Gmail messages via `gws`                 | "send email", "envia un correo", "reply to this thread"                           |
