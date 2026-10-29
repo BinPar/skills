@@ -1,0 +1,9 @@
+{
+  "name": "binpar-documents",
+  "description": "Branded BinPar A4 PDFs from Markdown (cover, index, chapters, tables, callouts, KPIs, charts, back cover) or from free-layout HTML, rendered locally with headless Chrome and no npm installs.",
+  "version": "1.0.0",
+  "author": {
+    "name": "BinPar"
+  },
+  "keywords": ["binpar", "pdf", "documents", "markdown", "brand", "proposal", "report"]
+}
