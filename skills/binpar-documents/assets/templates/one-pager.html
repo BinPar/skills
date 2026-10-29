@@ -1,0 +1,153 @@
+<!doctype html>
+<!-- Free-layout A4 page. render.mjs injects fonts, tokens.css and components.css (bp-* classes);
+     write markup and page-specific CSS only. Each .sheet is one page. -->
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <title>BinPar · Ficha</title>
+    <style>
+      @page {
+        size: A4;
+        margin: 0;
+      }
+      body {
+        margin: 0;
+        background: #fff;
+      }
+      .sheet {
+        position: relative;
+        width: 210mm;
+        height: 297mm;
+        box-sizing: border-box;
+        padding: 18mm 18mm 16mm;
+        display: flex;
+        flex-direction: column;
+        gap: 9mm;
+        overflow: hidden;
+        break-after: page;
+        font-size: 10pt;
+        line-height: 1.6;
+      }
+      .sheet.bp-grid::before {
+        -webkit-mask-image: radial-gradient(ellipse 80% 40% at 80% 0%, #000 10%, transparent 70%);
+        mask-image: radial-gradient(ellipse 80% 40% at 80% 0%, #000 10%, transparent 70%);
+      }
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .top img {
+        height: 9mm;
+      }
+      .intro {
+        display: grid;
+        gap: 5mm;
+        margin-top: 10mm;
+      }
+      .intro .bp-display {
+        font-size: 30pt;
+        line-height: 1.12;
+      }
+      .intro .bp-lede {
+        font-size: 12pt;
+        line-height: 1.6;
+        max-width: 150mm;
+      }
+      .kpis {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 4mm;
+      }
+      .kpis .bp-card {
+        padding: 5mm;
+        box-shadow: 0 1mm 6mm rgb(0 109 121 / 7%);
+      }
+      .kpis .bp-kpi__value {
+        font-size: 22pt;
+        line-height: 1.1;
+      }
+      .kpis .bp-kpi__label {
+        font-size: 8.5pt;
+        line-height: 1.4;
+      }
+      .cols {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8mm;
+      }
+      .cols .bp-h3 {
+        font-size: 11.5pt;
+        margin-bottom: 2mm;
+      }
+      .cols p,
+      .cols li {
+        margin: 0 0 1.5mm;
+        color: var(--bp-text);
+      }
+      .cols ul {
+        margin: 0;
+        padding-left: 4.5mm;
+      }
+      .cols li::marker {
+        color: var(--bp-accent);
+      }
+      .foot {
+        margin-top: auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 4mm;
+        border-top: 1px solid var(--bp-border);
+        font-size: 8pt;
+        color: var(--bp-text-muted);
+      }
+      .foot .bp-eyebrow {
+        font-size: 7pt;
+      }
+    </style>
+  </head>
+  <body class="bp-page">
+    <section class="sheet bp-grid">
+      <div class="top">
+        <img src="{{assets}}/logos/binpar-logo-light.svg" alt="BinPar" />
+        <span class="bp-tag bp-tag--brand">Ficha de producto</span>
+      </div>
+
+      <div class="intro">
+        <p class="bp-eyebrow">IA médica institucional</p>
+        <h1 class="bp-display">Evidencia clínica,<br /><span class="bp-accent">siempre ordenada.</span></h1>
+        <p class="bp-lede">
+          La plataforma reúne la evidencia clínica disponible y la devuelve ordenada, trazable y lista para decidir en
+          consulta.
+        </p>
+      </div>
+
+      <div class="kpis">
+        <div class="bp-card bp-kpi"><span class="bp-kpi__value">2,4 s</span><span class="bp-kpi__label">Mediana hasta el primer texto</span></div>
+        <div class="bp-card bp-kpi"><span class="bp-kpi__value">100 %</span><span class="bp-kpi__label">Respuestas con la fuente enlazada</span></div>
+        <div class="bp-card bp-kpi"><span class="bp-kpi__value">3 capas</span><span class="bp-kpi__label">Corpus, consulta y gobierno</span></div>
+      </div>
+
+      <div class="cols">
+        <div>
+          <h2 class="bp-h3">Qué resuelve</h2>
+          <ul>
+            <li>Localiza la recomendación vigente en guías y protocolos.</li>
+            <li>Enlaza el fragmento de la fuente que respalda cada respuesta.</li>
+            <li>Versiona el corpus y registra cada publicación.</li>
+          </ul>
+        </div>
+        <div>
+          <h2 class="bp-h3">Cómo se implanta</h2>
+          <p>Doce semanas en tres fases: corpus, validación con preguntas de control y despliegue en consulta.</p>
+        </div>
+      </div>
+
+      <div class="foot">
+        <span class="bp-eyebrow">binpar.com</span>
+        <span>© 2026 BinPar</span>
+      </div>
+    </section>
+  </body>
+</html>

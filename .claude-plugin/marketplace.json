@@ -1,0 +1,34 @@
+{
+  "name": "binpar",
+  "owner": {
+    "name": "BinPar",
+    "email": "info@binpar.com"
+  },
+  "metadata": {
+    "description": "BinPar agent skills for Claude Code and Codex: brand identity, brand voice and branded PDF documents",
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "binpar-brand-design-system",
+      "source": "./skills/binpar-brand-design-system",
+      "description": "BinPar visual identity (manual v1.0): logo, palette and themes, typography, grid, surfaces, components, motion and charts, with CSS tokens, fonts, logos and icons.",
+      "category": "design",
+      "tags": ["binpar", "brand", "design-system", "ui"]
+    },
+    {
+      "name": "binpar-brand-voice",
+      "source": "./skills/binpar-brand-voice",
+      "description": "BinPar brand voice (es-ES): clinical sobriety, naming, red lines, corporate register, format guidance and a review mode for any BinPar copy.",
+      "category": "writing",
+      "tags": ["binpar", "brand", "voice", "copywriting"]
+    },
+    {
+      "name": "binpar-documents",
+      "source": "./skills/binpar-documents",
+      "description": "Branded BinPar A4 PDFs from Markdown or free-layout HTML, rendered locally with headless Chrome.",
+      "category": "productivity",
+      "tags": ["binpar", "pdf", "documents"]
+    }
+  ]
+}
