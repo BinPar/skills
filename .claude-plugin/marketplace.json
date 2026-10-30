@@ -26,7 +26,7 @@
     {
       "name": "binpar-documents",
       "source": "./skills/binpar-documents",
-      "description": "Branded BinPar A4 PDFs from Markdown or free-layout HTML, rendered locally with headless Chrome.",
+      "description": "Branded BinPar A4 PDFs: Markdown typeset with postext, or free-layout HTML printed with headless Chrome.",
       "category": "productivity",
       "tags": ["binpar", "pdf", "documents"]
     }

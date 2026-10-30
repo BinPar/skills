@@ -40,7 +40,12 @@ installed alone.
 
 ## binpar-documents
 
-Zero-install by design: Node ≥ 22 built-ins + a Chromium browser driven over CDP
-(`scripts/lib/chrome.mjs`); `marked` and Paged.js are vendored unmodified in
-`scripts/vendor/`. Don't add npm dependencies. After any change, render
-`assets/templates/propuesta.md` and `one-pager.html` with `--preview` and look at every page.
+Markdown documents are typeset with the `postext` CLI: `scripts/postext/build_book.py`
+(Python standard library only) turns the Markdown into a postext book whose `config` is
+`assets/postext/config.json`, the BinPar template and its source of truth (edit the JSON;
+no generator). Free-layout HTML is printed by Node ≥ 22 built-ins + a Chromium browser driven
+over CDP (`scripts/lib/chrome.mjs`); `marked` and Paged.js are vendored unmodified in
+`scripts/vendor/`. Don't add npm or pip dependencies. After any change, build
+`assets/templates/propuesta.md` with `build_book.py --images` and render `one-pager.html`
+with `render.mjs --preview`, then look at every page. `config.json` repeats the palette
+and font names of `tokens.css` by hand: when the tokens change, update it too.

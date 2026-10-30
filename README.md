@@ -8,7 +8,7 @@ medical AI, formerly Consensus Salutis), so these skills cover both company and 
 |---|---|---|
 | [`binpar-brand-design-system`](skills/binpar-brand-design-system/SKILL.md) | Visual identity from the manual v1.0: logo and app tile, teal/navy palette with light and dark themes, Sora + Plus Jakarta Sans, 44 px grid, isometric planes, surfaces, flaps, pill components, motion, charts. Ships CSS tokens, Tailwind theme, fonts, logos, favicons and an HTML starter | "Hazme una landing / artifact / dashboard de BinPar", "colores de BinPar", "revisa si esto cumple la marca", "OG image para LinkedIn" |
 | [`binpar-brand-voice`](skills/binpar-brand-voice/SKILL.md) | How BinPar writes (es-ES): clinical sobriety, naming, no personified AI, clinical and regulatory red lines, disclosure boundary, corporate register, guidance per format (proposal, report, deck, email, UI, blog) and a review mode | "Redacta la propuesta", "revisa este texto", "escribe el post", "copy del botón" |
-| [`binpar-documents`](skills/binpar-documents/SKILL.md) | Branded A4 PDFs, locally: Markdown → cover, index with page numbers, chapters, tables, callouts, KPIs, charts, back cover; or free-layout HTML (one-pagers) printed with the brand CSS. Node 22 + Chrome, no npm installs | "Genera el PDF de la propuesta", "pásalo a PDF con la marca", "haz una ficha de producto" |
+| [`binpar-documents`](skills/binpar-documents/SKILL.md) | Branded A4 PDFs, locally: Markdown typeset with postext → cover, index, chapters, tables that split cleanly, callouts, figures, charts, clickable links, back cover; or free-layout HTML (one-pagers) printed with the brand CSS | "Genera el PDF de la propuesta", "pásalo a PDF con la marca", "haz una ficha de producto" |
 
 Other formats (decks, sites, dashboards) are built as artifacts or HTML following
 `binpar-brand-design-system` (`references/media.md`).
@@ -48,7 +48,7 @@ ln -s ~/dev/binpar-skills/skills/binpar-documents ~/.claude/skills/
 
 ## Requirements
 
-- `binpar-documents`: Node.js ≥ 22 and Google Chrome / Chromium / Edge / Brave
+- `binpar-documents`: Python 3 and the [`postext` CLI](https://postext.dev) ≥ 1.57 for Markdown documents (install command in its SKILL.md); Node.js ≥ 22 and Google Chrome / Chromium / Edge / Brave for free-layout HTML
   (or `npx playwright install chromium`, or `BINPAR_CHROME=/path/to/chrome`).
 - The other two skills are reference-only.
 
