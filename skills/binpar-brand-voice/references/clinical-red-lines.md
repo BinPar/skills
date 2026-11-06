@@ -135,6 +135,12 @@ Positioning is done by **contrast of approach**, described in the abstract:
 The second row is also the brand's genuine thesis, taken from the functional documents: value
 lives in the curated corpus. It is safe to say publicly because it names no one.
 
+**One exception: a comparison the client commissioned.** In a report, deck or video addressed
+to one client, about a test that client asked for against its current tool, that tool may be
+named (the October 2026 CatSalut test video names the incumbent chat). Conditions: the same
+questions and the same blind judgement for both, the method stated, every figure with *n* and
+date, and the piece is not published or reused for another client. Public copy never names it.
+
 ## 5. Fear: commercial vs clinical
 
 **Banned, commercial fear.** Pressure about the organisation's competitive position.

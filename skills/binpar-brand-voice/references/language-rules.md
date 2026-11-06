@@ -34,7 +34,7 @@ and agency in a clinical setting means responsibility.
 | decide, determina, resuelve | attributes the decision that belongs to the clinician |
 | opina, cree, considera | attributes opinion |
 | diagnostica, indica, prescribe, recomienda (a un paciente) | crosses the clinical red line |
-| aprende de ti, se adapta a ti, te conoce | personification plus second person |
+| aprende de ti, se adapta a ti, te conoce | attributes a relationship with the user |
 | razona, piensa, reflexiona | attributes cognition |
 
 ### The rewrite move
@@ -226,8 +226,9 @@ Questions and exclamations never take an extra period. No exclamation marks in h
 - Sentence case, not title case: *"Del documento fuente a la decisión: evidencia visible en cada
   consulta"*.
 - A colon carries a subtitle. One colon per heading.
-- No question marks in an H1 or display headline. A question is allowed as an H2 when the section
-  answers it.
+- A blog title or document title is never a question. A display headline on a landing or tool
+  page may be one when the page answers it (*"¿Encaja BinPar en tu institución?"*). A question
+  is allowed as an H2 when the section answers it.
 - Numbered H2 (`## 1. ...`) is fine in **marco** and **evidencia** articles and in documents with
   a table of contents. Avoid elsewhere.
 - Headings carry the anchor: *"Señales de alerta"* is fine; *"Consideraciones adicionales"* is not.

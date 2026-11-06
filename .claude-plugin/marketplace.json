@@ -19,7 +19,7 @@
     {
       "name": "binpar-brand-voice",
       "source": "./skills/binpar-brand-voice",
-      "description": "BinPar brand voice (es-ES): clinical sobriety, naming, red lines, corporate register, format guidance and a review mode for any BinPar copy.",
+      "description": "BinPar brand voice (es-ES): clinical sobriety in a conversational voice, naming, red lines, format guidance (web, blog, video, LinkedIn, documents, email, UI) and a review mode for any BinPar copy.",
       "category": "writing",
       "tags": ["binpar", "brand", "voice", "copywriting"]
     },
