@@ -196,7 +196,7 @@ level is skipped or changes position.
 
 | Level | Rules | Manual examples |
 |---|---|---|
-| **Antetítulo** | 1-4 words, noun phrase that places the topic. Typeset in caps by the layout (Sora Bold, wide tracking); the source string stays in sentence case | "IA médica institucional", "Prólogo · Filosofía", "Benchmark · Tiempo de respuesta" |
+| **Antetítulo** | 1-4 words per segment (segments joined by " · "), noun phrase that places the topic. Typeset in caps by the layout (Sora Bold, wide tracking); the source string stays in sentence case | "IA médica institucional", "Prólogo · Filosofía", "Benchmark · Tiempo de respuesta" |
 | **Titular** | States the idea. Sentence case, never typed or set in caps. One sentence, or two short ones: first idea, then second idea. 2-8 words per sentence | "Conocimiento aplicado.", "Evidencia clínica, siempre ordenada.", "Dos elementos. Un mismo sistema.", "Datos con un hilo común." |
 | **Entradilla** | Explains it in one or two anchored sentences | "La plataforma reúne la evidencia clínica disponible y la devuelve ordenada, trazable y lista para decidir en consulta." |
 

@@ -33,7 +33,7 @@ Universitario X", "la Consejería"). Firm on commitments, calibrated on effects.
 
 **Do:** *"BinPar entrega el entorno de preproducción en la semana 4. El Hospital designa un
 supervisor clínico por servicio antes de esa fecha."*
-**Don't:** *"Nuestra solución integral revolucionará la práctica clínica del hospital."* (M5, M8,
+**Don't:** *"Nuestra solución integral revolucionará la práctica clínica del hospital."* (M8, M9,
 H2)
 
 Never promise a clinical outcome as a deliverable. The measurable deliverable is the process:
@@ -54,7 +54,7 @@ the client is named).
 | Anexos | Raw tables, question lists, glossary |
 
 Chart and table titles are running headings (no period) that state the reading: *"La consulta
-responde antes que la media del sector"*, not *"Tiempo de respuesta"*. One protagonist figure per
+llega en 25 s de mediana, frente a 30"*, not *"Tiempo de respuesta"*. One protagonist figure per
 chart; the rest is context.
 
 ## 3. PDF document (any printed or downloadable document)
@@ -96,7 +96,7 @@ the institution writes in *usted*, and keep it for the whole thread.
 | Subject | Specific, ≤ 60 characters, no period, no caps, no emoji: *"Propuesta piloto Atención Primaria · versión 2"* |
 | First sentence | The purpose: *"Te escribo para confirmar la reunión de arranque del piloto."* |
 | Body | ≤ 150 words for most emails; context only as needed; a short list for several items |
-| Ask | One, explicit, with a date: *"¿Te encaja el martes 11 de noviembre a las 10:00?"* |
+| Ask | One, explicit, with a date: *"¿Te encaja el miércoles 11 de noviembre a las 10:00?"* |
 | Close | *"Un saludo,"* + first name, then the team signature from the website's generator (`/mail-generator`: role, name, contact, tile, legal notice). Don't retype what the signature carries. No *"Quedo a la espera de tus noticias"* filler |
 
 Same red lines as public copy: an email to a client is a document they can forward.
@@ -193,7 +193,8 @@ A Markdown file with numbered scenes, each with its time range and its voice-ove
 
 **Structure:**
 
-1. **Opening (≤ 10 s):** the name and the thesis in one sentence. *"BinPar para CatSalut. Así
+1. **Opening (≤ 10 s; in a social cut, the thesis on screen within 3 s):** the name and the
+   thesis in one sentence. *"BinPar para CatSalut. Así
    se ha puesto a prueba el chat clínico."*
 2. **The problem**, in operational terms: role, document, failure mode.
 3. **How it works**, at functional level. The disclosure boundary applies to every public
@@ -216,7 +217,7 @@ A Markdown file with numbered scenes, each with its time range and its voice-ove
   *"enfermedad renal crónica"*.
 - Narrator per `voice-and-narrator.md` §3: *nosotros* for the team's work ("hemos estudiado,
   una a una, las 54 respuestas que fallaron"), *tú* sparingly. Personification stays banned in
-  every register, internal videos included: *"la especialidad razona muy poco antes de
+  every video, internal ones included: *"la especialidad razona muy poco antes de
   responder"* → *"la especialidad lee su corpus entero y responde casi sin análisis previo"*.
 
 ### Voice direction
@@ -237,7 +238,7 @@ script may record it.
 
 - Title cards follow the headline block: antetítulo (*"Comité clínico · octubre de 2026"*),
   titular as a display headline with its period, optional entradilla.
-- ≤ 8 words per titular, ≤ 40 words on screen at once. The screen never contradicts or runs
+- ≤ 8 words per sentence of the titular, ≤ 40 words on screen at once. The screen never contradicts or runs
   ahead of the voice.
 - Figures with es-ES format and unit: *"89 %"*, *"35 s"*, *"< 1 céntimo"*.
 
@@ -247,7 +248,7 @@ script may record it.
 - ≤ 2 lines, ≤ 42 characters per line, 1-7 s per cue, ≤ 17 characters per second. Cut at
   syntactic boundaries, never between article and noun or between number and unit.
 - Digits, not words: *"219 de 246"*, *"89 %"*. A raw speech-to-text file writes numbers in
-  words and runs past 40 characters and 20 characters per second: edit it before publishing.
+  words and runs past 42 characters and 20 characters per second: edit it before publishing.
 - Subtitles transcribe; the only edit is condensing for reading speed. *BinPar* always spelt
   exactly.
 
@@ -265,8 +266,8 @@ Two voices, the same red lines, disclosure boundary, naming and no-emoji rule.
 
 - The first two lines (≈ 200 characters, before *"ver más"*) carry the thesis with an anchor.
   No clickbait (*"No vas a creer…"*), no emoji, no exclamation.
-- 80-200 words in paragraphs of one to three sentences. One idea; at most one figure, with its
-  source.
+- 80-200 words in paragraphs of one to three sentences. One idea; at most one figure per
+  paragraph, each from the linked piece or with its source.
 - One link, at the end. Zero to three hashtags, after it.
 - Sharing a blog piece: give its single strongest finding, not its excerpt.
 - Name an organisation only if it appears on the website's success-case map or has approved it
@@ -275,12 +276,14 @@ Two voices, the same red lines, disclosure boundary, naming and no-emoji rule.
 
 **Model** (from the ingestion piece):
 
-> "Un cartel de Código Infarto puede llegar como un PDF con el algoritmo entero dentro de una
-> imagen y 35 caracteres de texto real: los del título. La extracción termina sin errores y el
-> dato clínico no está.
+> "Un PDF clínico puede terminar la extracción sin errores y no contener el dato. En la batería
+> que hemos medido hay un cartel de Código Infarto con el algoritmo entero dentro de una imagen:
+> el texto extraíble son los 35 caracteres del título.
 >
-> Hemos medido la ingesta de 24 documentos reales de dos servicios de salud. En el artículo
-> explicamos qué comprobar antes de construir respuestas sobre una guía.
+> Medimos la ingesta de 24 documentos reales de dos servicios de salud, desde guías y
+> protocolos hasta calendarios y trípticos. En el artículo explicamos qué comprobar antes de
+> construir respuestas sobre una guía, quién debería revisarlo y qué no detecta un recuento de
+> caracteres.
 >
 > [enlace]"
 

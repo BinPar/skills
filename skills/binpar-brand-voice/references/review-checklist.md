@@ -21,11 +21,11 @@ audit you produce when handed existing copy.
 | H2 | Efficacy claim or figure without a citable source and its context |
 | H3 | Clinical outcome presented as technical signal, or the reverse |
 | H4 | Implies CE marking, MDR, medical-device status, certification or AI Act conformity |
-| H5 | Names a competitor, a model, or a model provider |
+| H5 | Names a competitor, a model, or a model provider (except a comparison the client commissioned, `clinical-red-lines.md` §4) |
 | H6 | Personifies the system: entiende, sabe, interpreta, juzga, decide, opina, razona, aprende de ti, or the system speaking as *yo* / *nosotros* ("hemos revisado tu pregunta") |
 | H7 | Crosses the disclosure boundary: Convex, AI SDK, CRC, anchor, delta, VFS, table names, model slots, internal tags, *orquestador* / *agentes expertos* / *sub-agente* as names of the architecture |
 | H8 | Commercial fear framing |
-| H9 | Attributes clinical responsibility to the system, or omits the professional's judgement where the sentence needs it; a *comité* that "validates" or "reviews" an answer (implies a human review that did not happen) |
+| H9 | An imperative telling the clinician what to do with a patient; attributes clinical responsibility to the system, or omits the professional's judgement where the sentence needs it; a *comité* that "validates" or "reviews" an answer (implies a human review that did not happen) |
 
 ### MEDIUM findings
 
@@ -34,7 +34,7 @@ audit you produce when handed existing copy.
 | M1 | Claim with no operational anchor (role, document, decision, failure mode) |
 | M2 | Noun stacking / nominalisation chain |
 | M3 | Paragraph that restates the previous one, or hedged non-claim |
-| M4 | Address: *tú* and *usted* mixed on one surface, or *usted* outside legal text and an *usted* email thread; empathy or flattery aimed at the reader ("sabemos lo duro…"); a brochure question ("¿Y si tu equipo pudiera…?"); more than one rhetorical question per piece; an imperative about clinical conduct |
+| M4 | Address: *tú* and *usted* mixed on one surface, or *usted* outside legal text and an *usted* email thread; empathy or flattery aimed at the reader ("sabemos lo duro…"); a brochure question ("¿Y si tu equipo pudiera…?"); more than one rhetorical question per piece |
 | M5 | *nosotros* stating beliefs, feelings or rank instead of a checkable action (creemos, nos apasiona, apostamos por, somos líderes), outside the team page's purpose line |
 | M6 | Product in the opening, in the close, or more than twice in the body (except nota de producto) |
 | M7 | Banned lexicon: copiloto, asistente virtual, agente, cerebro clínico, segunda opinión, orquestado / orquestación as an adjective or abstract noun (*orquestador* is H7). *comité clínico* and *comité de expertos* are allowed |
@@ -101,8 +101,8 @@ Rules for the table:
 
 | Verdict | Condition |
 |---|---|
-| **publicable** | No HIGH, at most two MEDIUM |
-| **publicable con correcciones** | No HIGH, three or more MEDIUM, or any number of LOW |
+| **publicable** | No HIGH, at most two MEDIUM, any number of LOW |
+| **publicable con correcciones** | No HIGH, three or more MEDIUM |
 | **reescritura** | Any HIGH, or MEDIUM findings that touch the thesis of the piece |
 
 A HIGH finding always forces *reescritura*, even if it is a single word. That is the point of the
@@ -166,7 +166,7 @@ Run in this order. Steps 1-4 are cheap and catch most of it.
 - [ ] No sentence that states what should be done to a patient
 - [ ] Every figure has its source and its context; technical signal labelled as such
 - [ ] No certification, marking or conformity claimed
-- [ ] No competitor, model or provider named
+- [ ] No competitor, model or provider named (except a comparison the client commissioned)
 - [ ] Fear framing is clinical risk, never commercial pressure
 
 ### Disclosure pass
@@ -216,7 +216,8 @@ Output:
 ```
 ## Auditoría de voz — hero de producto (borrador)
 
-Arquetipo declarado: nota de producto
+Arquetipo o formato: nota de producto
+Destinatario: público
 Extensión: 23 palabras (presupuesto: 500-800 para la pieza completa)
 
 | # | Fragmento | Código | Severidad | Reescritura propuesta |
@@ -224,15 +225,16 @@ Extensión: 23 palabras (presupuesto: 500-800 para la pieza completa)
 | 1 | "reduciendo errores diagnósticos" | H2, H3 | HIGH | Eliminar. Sin estudio citable no procede. Si hay que hablar de rendimiento: "el benchmark documentado se presenta como señal técnica contextualizada" |
 | 2 | "Certificado para entornos sanitarios europeos." | H4 | HIGH | "Diseñado para operar en entornos sanitarios europeos: despliegue en la Unión Europea, auditoría completa y trazabilidad de acciones" |
 | 3 | "entiende tus dudas" | H6 | HIGH | "recupera el conocimiento relevante para tu duda" |
-| 4 | "el copiloto clínico" | M7 | MEDIUM | "la capa de consulta clínica" |
-| 5 | "te da la respuesta correcta" | M9, H9 | HIGH | "te devuelve una síntesis con la referencia al fragmento que la sustenta; la conclusión es tuya" |
+| 4 | "te da la respuesta correcta" | M9, H9 | HIGH | "te devuelve una síntesis con la referencia al fragmento que la sustenta; la conclusión es tuya" |
+| 5 | "el copiloto clínico" | M7 | MEDIUM | "la capa de consulta clínica" |
 
 **Veredicto:** reescritura
 
 Propuesta completa:
 
 "BinPar convierte guías, protocolos y documentación propia en una consulta clínica trazable.
-Cada respuesta puede enlazar al fragmento original que la sustenta, y la decisión es tuya. Diseñado para operar en la Unión Europea, con auditoría completa e historial de
+Cada respuesta puede enlazar al fragmento original que la sustenta, y la decisión es tuya. La
+plataforma está diseñada para operar en la Unión Europea, con auditoría completa e historial de
 versiones."
 ```
 

@@ -56,7 +56,7 @@ every quoted string, example and rewrite stays in Spanish.
 | **Contact** | `info@binpar.com`, `nombre@binpar.com`, `binpar.com`. Email signatures come from the website's generator (`/mail-generator`) |
 | **Addresses and IDs** | Domains, mailboxes and IDs keep their spelling (legacy `consensussalutis.com`, `consensussalutis@binpar.com`, author slug `equipo-consensus-salutis`). Quote them verbatim, never derive a name from them. Lowercase `binpar` exists only in identifiers (URLs, file names, domains) |
 
-> Full detail: `references/voice-and-narrator.md` §3. The name as a graphic (logo files, never
+> Full detail: `references/voice-and-narrator.md` §4. The name as a graphic (logo files, never
 > typeset as a logo) belongs to `binpar-brand-design-system` (`references/logo.md`).
 
 ## The four dials
@@ -84,7 +84,8 @@ throughout. Conversational is not promotional:
 
 - **The system is never *nosotros* or *yo*.** "Hemos revisado tu pregunta" in the chat is
   personification (H6).
-- **No imperative about clinical conduct.** Imperatives are for navigation, forms and process.
+- **No imperative about clinical conduct** (H9). Imperatives are for navigation, forms and
+  process.
 - **Analytical pieces** (blog, explainer videos, public reports): the product never in the
   opening, never as a closing sale, at most twice in the body. The team narrating its own
   method is not placement. Exception: *nota de producto*.
@@ -136,7 +137,7 @@ corporate buzzwords and futurism (M8).
 
 ## Clinical and regulatory red lines
 
-**High severity. Any one invalidates the piece, in every register.**
+**High severity. Any one invalidates the piece, in every format.**
 
 1. **No diagnosis or therapeutic indication.** The system does not diagnose, prescribe or
    recommend treatment for a specific patient. Write about documents and criteria.
@@ -145,7 +146,7 @@ corporate buzzwords and futurism (M8).
 3. **No regulatory badge.** No CE, MDR, medical-device status, ISO, ENS or AI Act conformity
    unless accredited and named. Write design orientation, not conformity.
 4. **No competitors, no model or provider names.** Position by contrast of approach. Only a
-   report or video for one client, about a comparison that client commissioned, may name its
+   report, deck or video for one client, about a comparison that client commissioned, may name its
    current tool.
 
 Commercial fear is banned ("no te quedes atrás"); clinical risk analysis is the brand's home

@@ -25,7 +25,7 @@ what the corpus says; the clinician applies it.
 | Off-brand | On-brand |
 |---|---|
 | "El sistema recomienda ajustar la dosis en insuficiencia renal." | "La respuesta enlaza el epígrafe de la guía que trata el ajuste de dosis en insuficiencia renal." |
-| "Ante una sospecha de infarto, la plataforma indica el protocolo a seguir." | "La consulta devuelve el protocolo de código infarto vigente en el centro, con la versión publicada y su fuente." |
+| "Ante una sospecha de infarto, la plataforma indica el protocolo a seguir." | "La consulta devuelve el protocolo de Código Infarto vigente en el centro, con la versión publicada y su fuente." |
 | "Orienta el diagnóstico diferencial." | "Reúne, de las fuentes priorizadas por la organización, el material que el profesional necesita para su propio diagnóstico diferencial." |
 
 ### Clinical examples in articles

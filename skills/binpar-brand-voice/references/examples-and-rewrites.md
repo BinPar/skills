@@ -68,7 +68,7 @@ BinPar."* are now models. What still fails is conversational copy with nothing t
 | Draft | Codes | On-brand |
 |---|---|---|
 | "¿Quieres explorar BinPar para tu organización? Déjanos tus datos y cuéntanos qué necesitas." | M1 | "Cuéntanos qué servicio, qué documentos y qué plazo tienes en mente. Te respondemos en un día laborable." |
-| "Nos apasiona transformar la atención sanitaria con IA." | M5, M8 | "Llevamos más de quince años desarrollando software sanitario, y cada respuesta de la plataforma lleva su fuente." |
+| "Nos apasiona transformar la atención sanitaria con IA." | M5, M8 | "Llevamos más de quince años desarrollando software sanitario, y cada respuesta de la plataforma puede enlazar su fuente." |
 | "¿Y si tu equipo pudiera olvidarse de buscar en las guías?" | M4 | "Si tu equipo consulta varias guías por turno, la pregunta es cuánto tarda en localizar el epígrafe vigente y si puede enseñarlo después." |
 | "Selecciona tu cargo" next to "Introduzca su institución" | M4 | "Selecciona tu cargo" / "Escribe el nombre de tu institución" |
 | Chat: "Hemos revisado tu pregunta y creemos que…" | H6 | "Respuesta con cuatro fuentes de Nefrología y Cardiología." |
